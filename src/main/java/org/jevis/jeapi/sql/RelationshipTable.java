@@ -57,6 +57,7 @@ public class RelationshipTable {
 
         PreparedStatement ps = null;
         List<JEVisRelationship> relations = new LinkedList<JEVisRelationship>();
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -91,6 +92,7 @@ public class RelationshipTable {
                 + " values (?,?,?)";
 
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -131,6 +133,7 @@ public class RelationshipTable {
                 + " and " + COLUMN_TYPE + "=?";
 
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -169,6 +172,7 @@ public class RelationshipTable {
         //TODO make it save with a prepared or so
 
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
             String in = " IN(";

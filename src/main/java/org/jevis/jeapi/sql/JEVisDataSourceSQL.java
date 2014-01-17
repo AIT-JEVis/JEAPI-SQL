@@ -59,6 +59,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private AttributeTable _at;
     private RelationshipTable _rt;
     private ClassRelationTable _crt;
+    private int qCount = 0;//for benchmarking
 
     public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw, String jevisUser, String jevisPW) throws JEVisException {
         _dbHost = db;
@@ -293,5 +294,15 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             _crt = new ClassRelationTable(this);
         }
         return _crt;
+    }
+
+    protected void addQuery() {
+        qCount++;
+    }
+
+    public int getCount() {
+        int tmp = qCount;
+        qCount = 0;
+        return tmp;
     }
 }

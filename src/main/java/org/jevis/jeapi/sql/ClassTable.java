@@ -72,7 +72,7 @@ public class ClassTable {
         String sql = "delete from " + TABLE + " where " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
         ResultSet rs = null;
-
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -105,6 +105,7 @@ public class ClassTable {
         PreparedStatement ps = null;
         List<JEVisClass> all = new ArrayList<JEVisClass>();
         List<JEVisClass> heirs = new ArrayList<JEVisClass>();
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -142,6 +143,8 @@ public class ClassTable {
                 + " values(?)";
 
         PreparedStatement ps = null;
+        _ds.addQuery();
+
         try {
 
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -179,7 +182,7 @@ public class ClassTable {
                     + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?"
                     + " where " + COLUMN_NAME + "=?";
 
-
+            _ds.addQuery();
             PreparedStatement ps = _connection.prepareStatement(sql);
 
 
@@ -280,6 +283,7 @@ public class ClassTable {
                 + " limit 1 ";
 
         PreparedStatement ps = null;
+        _ds.addQuery();
 
 
         try {
@@ -324,6 +328,7 @@ public class ClassTable {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
+        _ds.addQuery();
 
 
         try {

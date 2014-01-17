@@ -67,6 +67,7 @@ public class AttributeTable {
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
+            _ds.addQuery();
 
             ps.setLong(1, obj.getID());
             ps.setString(2, type.getName());
@@ -100,7 +101,7 @@ public class AttributeTable {
                 + " where " + COLUMN_OBJECT + "=?";
 
         try {
-
+            _ds.addQuery();
             PreparedStatement ps = _connection.prepareStatement(sql);
             ps.setLong(1, object.getID());
 
@@ -140,6 +141,7 @@ public class AttributeTable {
         PreparedStatement ps = null;
 
         try {
+            _ds.addQuery();
             ps = _connection.prepareStatement(sql);
 
             if (att.getTimestampFromLastSample() != null) {

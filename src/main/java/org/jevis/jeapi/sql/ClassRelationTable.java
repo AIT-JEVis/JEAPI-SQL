@@ -63,6 +63,7 @@ public class ClassRelationTable {
                 + " and " + COLUMN_TYPE + "=?";
 
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
 
@@ -105,7 +106,7 @@ public class ClassRelationTable {
         PreparedStatement ps = null;
 
         try {
-
+            _ds.addQuery();
             ps = _connection.prepareStatement(sql);
             ps.setString(1, start.getName());
             ps.setString(2, end.getName());
@@ -146,7 +147,7 @@ public class ClassRelationTable {
                 + " where " + COLUMN_START + "=?"
                 + " or " + COLUMN_END + "=?";
 
-
+        _ds.addQuery();
         PreparedStatement ps = null;
         try {
 

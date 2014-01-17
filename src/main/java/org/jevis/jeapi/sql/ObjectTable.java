@@ -80,6 +80,7 @@ public class ObjectTable {
         PreparedStatement ps = null;
         ResultSet rs = null;
         JEVisObject object = null;
+        _ds.addQuery();
 
         try {
 
@@ -132,6 +133,7 @@ public class ObjectTable {
         PreparedStatement ps = null;
         ResultSet rs = null;
         List<JEVisObject> objects = new ArrayList<JEVisObject>();
+        _ds.addQuery();
 
         try {
             boolean firstRun = true;
@@ -181,6 +183,7 @@ public class ObjectTable {
                 + "(" + COLUMN_NAME + "," + COLUMN_CLASS + " )"
                 + " values(?,?)";
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -240,6 +243,7 @@ public class ObjectTable {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
+        _ds.addQuery();
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -274,6 +278,7 @@ public class ObjectTable {
                 + "(" + COLUMN_NAME + "," + COLUMN_PARENT + "," + COLUMN_GROUP + "," + COLUMN_LINK + "," + COLUMN_CLASS + ")"
                 + " values(?,?,?,?,?)";
         JEVisObject newObject = null;
+        _ds.addQuery();
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -320,6 +325,8 @@ public class ObjectTable {
         }
 
         JEVisObjectSQL object = null;
+        _ds.addQuery();
+
         String sql = "select o.*"
                 + ",r.*"
                 + " from " + TABLE + " o"
@@ -368,6 +375,7 @@ public class ObjectTable {
     public List<JEVisObject> getChildren(JEVisObject obj) throws JEVisException {
         ResultSet rs = null;
         List<JEVisObject> children = new ArrayList<JEVisObject>();
+        _ds.addQuery();
 
         String sql = "select o.*"
                 + ",r.*"
@@ -476,6 +484,7 @@ public class ObjectTable {
                 + " set " + COLUMN_DELETE + "=?"
                 + " where " + COLUMN_ID + " IN(?";
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
 //            System.out.println("find children to delete");
@@ -529,6 +538,7 @@ public class ObjectTable {
         String sql = "select " + COLUMN_ID + " from " + TABLE
                 + " where " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
+        _ds.addQuery();
 
         try {
 
