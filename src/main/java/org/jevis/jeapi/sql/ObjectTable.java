@@ -88,6 +88,8 @@ public class ObjectTable {
             ps.setString(2, JEVisConstants.Class.USER);
             ps.setString(3, JEVisConstants.Attribute.USER_PASSWORD);
 
+            logger.debug("SQL: {}", ps.toString());
+
             rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -174,32 +176,39 @@ public class ObjectTable {
         }
     }
 
-    public JEVisObject insertObject(String name, String jclass, JEVisObject parent, long group) throws JEVisException {
+    public JEVisObject insertObject(String name, JEVisClass jclass, JEVisObject parent, long group) throws JEVisException {
         String sql = "insert into " + TABLE
-                + "(" + COLUMN_NAME + "," + COLUMN_CLASS + "," + COLUMN_PARENT + "," + COLUMN_GROUP + ")"
-                + " values(?,?,?,?)";
+                + "(" + COLUMN_NAME + "," + COLUMN_CLASS + " )"
+                + " values(?,?)";
         PreparedStatement ps = null;
-        ResultSet rs = null;
 
         try {
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, name);
-            ps.setString(2, jclass);
-            ps.setLong(3, parent.getID());
-            ps.setLong(4, 0);
+            ps.setString(2, jclass.getName());
 //            System.out.println("putObject: " + ps);
 
             int count = ps.executeUpdate();
             if (count == 1) {
-                rs = ps.getGeneratedKeys();
+                ResultSet rs = ps.getGeneratedKeys();
 
                 if (rs.next()) {
-                    _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), JEVisConstants.Relationship.PARENT);
+                    int relType = -1;
+                    if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
+                        relType = JEVisConstants.ObjectRelationship.OWNER;
+                    } else if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
+                        relType = JEVisConstants.ObjectRelationship.NESTEDT_CLASS;
+                    }
+                    _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), relType);
+
+
                     for (JEVisRelationship rel : parent.getRelationships()) {
-                        if (rel.isType(JEVisConstants.Relationship.OWNER)) {
-                            _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.Relationship.OWNER);
+                        if (rel.isType(JEVisConstants.ObjectRelationship.OWNER)) {
+                            _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.ObjectRelationship.OWNER);
                         }
                     }
+
+
 
                     return getObject(rs.getLong(1), false);
                 } else {
@@ -213,9 +222,9 @@ public class ObjectTable {
             ex.printStackTrace();
             throw new JEVisException("Error while inserting object", 234234, ex);//ToDo real number
         } finally {
-            if (rs != null) {
+            if (ps != null) {
                 try {
-                    rs.close();
+                    ps.close();
                 } catch (SQLException ex) {
                     logger.debug("Error while closing DB connection: {}. ", ex);
                 }
@@ -514,7 +523,37 @@ public class ObjectTable {
                 } catch (SQLException e) { /*ignored*/ }
             }
         }
+    }
+
+    public boolean isUserUnique(String name) {
+        String sql = "select " + COLUMN_ID + " from " + TABLE
+                + " where " + COLUMN_NAME + "=?";
+        PreparedStatement ps = null;
+
+        try {
 
 
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, name);
+
+            ResultSet rs = ps.executeQuery();
+
+            if (rs.next()) {
+                return false;
+            } else {
+                return true;
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            //TODO throw JEVisExeption?!
+            return false;
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) { /*ignored*/ }
+            }
+        }
     }
 }

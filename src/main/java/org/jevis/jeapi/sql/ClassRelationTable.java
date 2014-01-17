@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009 - 2014 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2014 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -26,7 +26,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import org.jevis.jeapi.JEVisClass;
+import org.jevis.jeapi.JEVisClassRelationship;
 import org.jevis.jeapi.JEVisException;
+import org.jevis.jeapi.JEVisRelationship;
+import sun.util.logging.resources.logging;
 
 /**
  *
@@ -34,10 +37,11 @@ import org.jevis.jeapi.JEVisException;
  */
 public class ClassRelationTable {
 
-    public final static String TABLE = "classrelation";
-    public final static String COLUMN_CLASS = "class";
+    public final static String TABLE = "classrelationship";
+    public final static String COLUMN_START = "startclass";
 //    public final static String COLUMN_INHERITANCE="inheritance";
-    public final static String COLUMN_OKPARENT = "validparent";
+    public final static String COLUMN_END = "endclass";
+    public final static String COLUMN_TYPE = "type";
     private Connection _connection;
     private JEVisDataSourceSQL _ds;
 
@@ -46,50 +50,30 @@ public class ClassRelationTable {
         _ds = ds;
     }
 
-// 
-//    public boolean putInherit(JEVisClass jclass, JEVisClass inherit ){
-//        try{
-//            String sql = "insert into "+ TABLE+" ("+COLUMN_CLASS+","+COLUMN_INHERITANCE+") "
-//                    + " values(?,?)"
-//                    + " on duplicate key update "+COLUMN_CLASS+"=?,"+COLUMN_INHERITANCE+"=?";
-//            
-//            PreparedStatement ps = _connection.prepareStatement(sql);            
-//            ps.setString(1, jclass.getName());
-//            ps.setString(2, inherit.getName());
-//            ps.setString(3, jclass.getName());
-//            ps.setString(4, inherit.getName());
-//            
-//            System.out.println("SQL: "+ps);
-//            int count = ps.executeUpdate();
-//            if(count>0){
-//                return true;  
-//            }else{
-//                return false;
-//            }
-//            
-//            
-//        }catch(Exception ex){
-//            return false;
-//        }
-//        
-//        
-//    }
-//    
-    public boolean putVaildParent(JEVisClass jclass, JEVisClass inherit) {
+    /**
+     *
+     * @param jclass
+     * @param inherit
+     * @return
+     */
+    public boolean delete(JEVisClassRelationship rel) throws JEVisException {
+        String sql = "delete from " + TABLE
+                + " where " + COLUMN_START + "=?"
+                + " and " + COLUMN_END + "=?"
+                + " and " + COLUMN_TYPE + "=?";
+
+        PreparedStatement ps = null;
+
         try {
-            String sql = "insert into " + TABLE + " (" + COLUMN_CLASS + "," + COLUMN_OKPARENT + ") "
-                    + " values(?,?)"
-                    + " on duplicate key update " + COLUMN_CLASS + "=?," + COLUMN_OKPARENT + "=?";
 
-            PreparedStatement ps = _connection.prepareStatement(sql);
-            ps.setString(1, jclass.getName());
-            ps.setString(2, inherit.getName());
-            ps.setString(3, jclass.getName());
-            ps.setString(4, inherit.getName());
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, rel.getStart().getName());
+            ps.setString(2, rel.getEnd().getName());
+            ps.setInt(3, rel.getType());
 
-            System.out.println("SQL: " + ps);
+
             int count = ps.executeUpdate();
-            if (count > 0) {
+            if (count == 1) {
                 return true;
             } else {
                 return false;
@@ -97,28 +81,96 @@ public class ClassRelationTable {
 
 
         } catch (Exception ex) {
-            return false;
+            throw new JEVisException("Could not insert new ClassRelationship", 578246, ex);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) { /*ignored*/ }
+            }
         }
 
 
     }
 
-    public List<Relation> get(JEVisClass jclass) throws SQLException, JEVisException {
-        List<Relation> relations = new ArrayList<Relation>();
-        String sql = "select * from " + TABLE + " where " + COLUMN_CLASS + "=?";
+    /**
+     *
+     * @param jclass
+     * @param inherit
+     * @return
+     */
+    public JEVisClassRelationship insert(JEVisClass start, JEVisClass end, int type) throws JEVisException {
+        String sql = "insert into " + TABLE + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ") "
+                + " values(?,?,?)";
+        PreparedStatement ps = null;
 
-        PreparedStatement ps = _connection.prepareStatement(sql);
-        ps.setString(1, jclass.getName());
+        try {
 
-        ResultSet rs = ps.executeQuery();
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, start.getName());
+            ps.setString(2, end.getName());
+            ps.setInt(3, type);
 
 
-        while (rs.next()) {
-            relations.add(new Relation(_ds, rs, jclass));
+            int count = ps.executeUpdate();
+            if (count > 0) {
+                //TODO: maybe fetch from Db to be save
+                return new JEVisClassRelationshipSQL(_ds, start.getName(), end.getName(), type);
+            } else {
+                throw new JEVisException("Could not insert new ClassRelationship", 578245);
+            }
+
+
+        } catch (Exception ex) {
+            throw new JEVisException("Could not insert new ClassRelationship", 578246, ex);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) { /*ignored*/ }
+            }
         }
 
-        rs.close();
 
+    }
+
+    /**
+     *
+     * @param jclass
+     * @return
+     * @throws JEVisException
+     */
+    public List<JEVisClassRelationship> get(JEVisClass jclass) throws JEVisException {
+        List<JEVisClassRelationship> relations = new ArrayList<JEVisClassRelationship>();
+        String sql = "select * from " + TABLE
+                + " where " + COLUMN_START + "=?"
+                + " or " + COLUMN_END + "=?";
+
+
+        PreparedStatement ps = null;
+        try {
+
+
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, jclass.getName());
+            ps.setString(2, jclass.getName());
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                relations.add(new JEVisClassRelationshipSQL(_ds, rs));
+            }
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            throw new JEVisException("Error while fetching ClassRelationship", 7390562, ex);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) { /*ignored*/ }
+            }
+        }
         return relations;
     }
 }

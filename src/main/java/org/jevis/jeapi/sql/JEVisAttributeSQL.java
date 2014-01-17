@@ -60,10 +60,17 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
             _objectID = rs.getLong(AttributeTable.COLUMN_OBJECT);
 
-//            System.out.println("MaxTS: "+rs.getString(AttributeTable.COLUMN_MAX_TS));
             _maxTS = new DateTime(rs.getTimestamp(AttributeTable.COLUMN_MAX_TS));
-//            System.out.println("MaxTs.dt: "+_maxTS);
+            if (rs.wasNull()) {
+                _maxTS = null;
+            }
+
             _minTS = new DateTime(rs.getTimestamp(AttributeTable.COLUMN_MIN_TS));
+            if (rs.wasNull()) {
+                _minTS = null;
+            }
+
+
             _object = _ds.getObject(_objectID);
 
             if (rs.getString(AttributeTable.COLUMN_PERIOD) != null && !rs.getString(AttributeTable.COLUMN_PERIOD).isEmpty()) {
@@ -159,6 +166,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private void commit() throws JEVisException {
         AttributeTable at = new AttributeTable(_ds);
         at.updateAttributeTS(this);
+
     }
 
     public JEVisSample getLatestSample() {
@@ -305,6 +313,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     @Override
     public String toString() {
         String lastV = "-";
+
         if (_maxTS != null) {
             try {
                 if (_maxTS != null) {
@@ -323,6 +332,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 lastV = "Error";
             }
         }
+
+
         return "JEVisAttributeSQL{" + "name=" + _name + ", lastValue=" + lastV
                 + ", minTS=" + _minTS + ", maxTS=" + _maxTS + ", object="
                 + _object.getID() + ", period=" + _period + ", sampleCount="

@@ -84,6 +84,8 @@ public class RelationshipTable {
     //todo: implemet the return save and performant  
     public JEVisRelationship insert(long start, long end, int type) throws JEVisException {
 
+        System.out.println("insert cRel start: " + start + " end: " + end + " type: " + type);
+
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ")"
                 + " values (?,?,?)";

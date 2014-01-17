@@ -28,6 +28,7 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import org.jevis.jeapi.JEVisClass;
@@ -44,7 +45,7 @@ public class ClassTable {
 
     public final static String TABLE = "objectclass";
     public final static String COLUMN_NAME = "name";
-    public final static String COLUMN_INHERIT = "inheritance";
+//    public final static String COLUMN_INHERIT = "inheritance";
     public final static String COLUMN_DESCRIPTION = "description";
     public final static String COLUMN_ICON = "icon";//-->editinal table for files ?
     public final static String COLUMN_UNIQUE = "isunique";
@@ -58,7 +59,7 @@ public class ClassTable {
         _ds = ds;
     }
 
-    private void findHeirs(List<JEVisClass> all, List<JEVisClass> heirs, JEVisClass jclass) {
+    private void findHeirs(List<JEVisClass> all, List<JEVisClass> heirs, JEVisClass jclass) throws JEVisException {
         for (JEVisClass heir : all) {
             if (heir.getInheritance().equals(jclass)) {
                 heirs.add(heir);
@@ -67,10 +68,41 @@ public class ClassTable {
         }
     }
 
+    public boolean delete(JEVisClass jlas) throws JEVisException {
+        String sql = "delete from " + TABLE + " where " + COLUMN_NAME + "=?";
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+
+
+        try {
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, jlas.getName());
+
+            int count = ps.executeUpdate();
+
+            if (count == 1) {
+                _cach.remove(jlas.getName());
+                return true;
+            } else {
+                return false;
+            }
+
+        } catch (Exception ex) {
+            throw new JEVisException("Error while deleting Class: " + ex, 2342763);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException ex) {
+                    logger.warn("cound not close Prepared statement: {}", ex);
+                }
+            }
+        }
+    }
+
     public List<JEVisClass> getAllHeirs(JEVisClass jlass) throws JEVisException {
         String sql = "select * from " + TABLE;
         PreparedStatement ps = null;
-        ResultSet rs = null;
         List<JEVisClass> all = new ArrayList<JEVisClass>();
         List<JEVisClass> heirs = new ArrayList<JEVisClass>();
 
@@ -78,7 +110,7 @@ public class ClassTable {
             ps = _connection.prepareStatement(sql);
 //            System.out.println("getAllClasses: " + ps);
 
-            rs = ps.executeQuery();
+            ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
                 all.add(new JEVisClassSQL(_ds, rs));
@@ -119,6 +151,11 @@ public class ClassTable {
 //        System.out.println("putClass.sql: " + ps);
 //        int value = ps.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             int value = ps.executeUpdate();
+            if (value == 1) {
+                return true;
+            } else {
+                return false;
+            }
 
         } catch (Exception ex) {
 
@@ -133,15 +170,13 @@ public class ClassTable {
                 }
             }
         }
-
-        return true;
     }
 
     public boolean update(JEVisClass jclass, String oldName) throws JEVisException {
 
         try {
             String sql = "update " + TABLE
-                    + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_INHERIT + "=?," + COLUMN_UNIQUE + "=?"
+                    + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?"
                     + " where " + COLUMN_NAME + "=?";
 
 
@@ -152,9 +187,8 @@ public class ClassTable {
 //                System.out.println("rename");
                 ps.setString(1, jclass.getDescription());
                 ps.setString(2, jclass.getName());
-                ps.setString(3, jclass.getInheritance().getName());
-                ps.setBoolean(4, jclass.isUnique());
-                ps.setString(5, oldName);
+                ps.setBoolean(3, jclass.isUnique());
+                ps.setString(4, oldName);
             } else {//update with same name
 //                System.out.println("update");
                 if (jclass.getDescription() != null) {
@@ -199,8 +233,8 @@ public class ClassTable {
                     //------------------- Update existing Valid Parents
                     System.out.println("update Existing valid JEVis parents");
                     String updateValid = "update " + ClassRelationTable.TABLE
-                            + " set " + ClassRelationTable.COLUMN_CLASS + "=?"
-                            + " where " + ClassRelationTable.COLUMN_CLASS + "=?";
+                            + " set " + ClassRelationTable.COLUMN_START + "=?"
+                            + " where " + ClassRelationTable.COLUMN_START + "=?";
                     PreparedStatement psUpdate = _connection.prepareStatement(updateValid);
                     psUpdate.setString(1, jclass.getName());
                     psUpdate.setString(2, oldName);
@@ -211,8 +245,8 @@ public class ClassTable {
                     //------------------- Update existing Valid Parents #2
 //                    System.out.println("update Existing valid JEVis parents");
                     String updateValid2 = "update " + ClassRelationTable.TABLE
-                            + " set " + ClassRelationTable.COLUMN_OKPARENT + "=?"
-                            + " where " + ClassRelationTable.COLUMN_OKPARENT + "=?";
+                            + " set " + ClassRelationTable.COLUMN_END + "=?"
+                            + " where " + ClassRelationTable.COLUMN_END + "=?";
                     PreparedStatement psUpdate2 = _connection.prepareStatement(updateValid2);
                     psUpdate2.setString(1, jclass.getName());
                     psUpdate2.setString(2, oldName);
@@ -231,18 +265,62 @@ public class ClassTable {
         return false;
     }
 
-    public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException, SQLException {
+    public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
         JEVisClass jClass = null;
 
-        if (cach) {
-            if (_cach.containsKey(name)) {
-                return _cach.get(name);
-            }
-        }
+        //TODO:reenable cach disable cach
+//        if (cach) {
+//            if (_cach.containsKey(name)) {
+//                return _cach.get(name);
+//            }
+//        }
 
         String sql = "select * from " + TABLE
                 + " where  " + COLUMN_NAME + "=?"
                 + " limit 1 ";
+
+        PreparedStatement ps = null;
+
+
+        try {
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, name);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                jClass = new JEVisClassSQL(_ds, rs);
+            }
+
+        } catch (Exception ex) {
+
+            ex.printStackTrace();
+            throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException ex) {
+                    logger.debug("Error while closing DB connection: {}. ", ex);
+                }
+            }
+        }
+
+        _cach.put(name, jClass);
+        return jClass;
+    }
+
+    public List<JEVisClass> getAllObjectClasses() throws JEVisException, SQLException {
+        List<JEVisClass> jClasses = new LinkedList<JEVisClass>();
+
+        //TODO:reenable cach disable cach
+//        if (cach) {
+//            if (_cach.containsKey(name)) {
+//                return _cach.get(name);
+//            }
+//        }
+
+        String sql = "select * from " + TABLE;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
@@ -250,12 +328,11 @@ public class ClassTable {
 
         try {
             ps = _connection.prepareStatement(sql);
-            ps.setString(1, name);
 
             rs = ps.executeQuery();
 
             while (rs.next()) {
-                jClass = new JEVisClassSQL(_ds, rs);
+                jClasses.add(new JEVisClassSQL(_ds, rs));
             }
 
         } catch (Exception ex) {
@@ -272,7 +349,6 @@ public class ClassTable {
             }
         }
 
-        _cach.put(name, jClass);
-        return jClass;
+        return jClasses;
     }
 }

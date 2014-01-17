@@ -22,11 +22,14 @@ package org.jevis.jeapi.sql;
 import java.util.ArrayList;
 import java.util.List;
 import org.jevis.jeapi.JEVisAttribute;
+import org.jevis.jeapi.JEVisClass;
+import org.jevis.jeapi.JEVisClassRelationship;
 import org.jevis.jeapi.JEVisObject;
 import org.jevis.jeapi.JEVisRelationship;
-import static org.jevis.jeapi.JEVisConstants.Relationship.*;
+import static org.jevis.jeapi.JEVisConstants.ObjectRelationship.*;
 import static org.jevis.jeapi.JEVisConstants.Class.*;
 import static org.jevis.jeapi.JEVisConstants.Attribute.*;
+import static org.jevis.jeapi.JEVisConstants.ClassRelationship.*;
 import org.jevis.jeapi.JEVisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -97,7 +100,6 @@ public class RelationsManagment {
      * @return
      */
     public static boolean checkMebershipForType(JEVisObject user, JEVisObject object, int type) throws JEVisException {
-        logger.debug("checkMebershipForType: user[{}] object[{}] type[{}]", user.getID(), object.getID(), type);
 //        List<JEVisRelationship> objMemberships = object.getr(object);
         List<JEVisRelationship> userMemberships = getMembershipsRel(user);
         logger.debug("Mebership size: object[{}] user[{}]", object.getRelationships().size(), userMemberships.size());
@@ -167,6 +169,26 @@ public class RelationsManagment {
             JEVisAttribute sysAdmin = user.getAttribute(USER_SYS_ADMIN);
             return sysAdmin.getLatestSample().getValueAsBoolean();
         }
+        return false;
+    }
+
+    public static boolean isParentRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
+        for (JEVisClassRelationship rel : parent.getRelationships(OK_PARENT)) {
+            if (rel.getOtherClass(parent).equals(child)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean isNestedRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
+        for (JEVisClassRelationship rel : parent.getRelationships(NESTEDT)) {
+            if (rel.getOtherClass(parent).equals(child)) {
+                return true;
+            }
+        }
+
         return false;
     }
 }

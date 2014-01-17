@@ -21,13 +21,11 @@ package org.jevis.jeapi.sql;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.List;
 import java.util.Locale;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisDataSource;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisSample;
 import org.jevis.jeapi.JEVisType;
 import org.jevis.jeapi.JEVisUnit;
 
@@ -135,6 +133,7 @@ public class JEVisTypeSQL implements JEVisType {
         //TODO how to handel the userrigths for Classes and types?
         if (RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
             TypeTable tt = new TypeTable(_ds);
+
             return tt.detele(this);
 
         } else {
@@ -194,7 +193,13 @@ public class JEVisTypeSQL implements JEVisType {
 
     @Override
     public String toString() {
-        return "JEVisTypeSQL{" + "name=" + _name + ", guiType=" + _guiType + ", class=" + _class.getName() + ", unit=" + _unit + ", guiWeight=" + _guiWeight + ", premitivType=" + _premitivType + ", validity=" + _validity + '}';
+        String className = "-";
+        try {
+            className = _class.getName();
+        } catch (JEVisException ex) {
+        }
+
+        return "JEVisTypeSQL{" + "name=" + _name + ", guiType=" + _guiType + ", class=" + className + ", unit=" + _unit + ", guiWeight=" + _guiWeight + ", premitivType=" + _premitivType + ", validity=" + _validity + '}';
     }
 
     public void commit() throws JEVisException {

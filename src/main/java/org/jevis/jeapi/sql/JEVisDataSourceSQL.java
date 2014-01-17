@@ -56,7 +56,9 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
     private ObjectTable _ot;
     private ClassTable _ct;
+    private AttributeTable _at;
     private RelationshipTable _rt;
+    private ClassRelationTable _crt;
 
     public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw, String jevisUser, String jevisPW) throws JEVisException {
         _dbHost = db;
@@ -77,6 +79,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _connect;
     }
 
+    @Override
     public JEVisObject getCurrentUser() throws JEVisException {
         return _user;
     }
@@ -135,15 +138,23 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
     }
 
+    @Override
     public JEVisClass getJEVisClass(String name) throws JEVisException {
+        JEVisClass jClass = getClassTable().getObjectClass(name, true);
+        return jClass;
+    }
+
+    @Override
+    public List<JEVisClass> getJEVisClasses() throws JEVisException {
         try {
-            JEVisClass jClass = getClassTable().getObjectClass(name, true);
+            List<JEVisClass> jClass = getClassTable().getAllObjectClasses();
             return jClass;
         } catch (SQLException ex) {
             throw new JEVisException("error while select object class from JEVis MySQL Datsource  ", JEVisExceptionCodes.DATASOURCE_FAILD, ex);
         }
     }
 
+    @Override
     public JEVisClass buildClass(String name) throws JEVisException {
         try {
             if (RelationsManagment.isSysAdmin(_user)) {
@@ -161,25 +172,27 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
     }
 
+    @Override
     public List<JEVisObject> getRootObjects() throws JEVisException {
         List<JEVisObject> roots = new LinkedList<JEVisObject>();
-        List<JEVisRelationship> member = RelationsManagment.getRelationByType(getCurrentUser(), JEVisConstants.Relationship.MEMBER_READ);
+        List<JEVisRelationship> member = RelationsManagment.getRelationByType(getCurrentUser(), JEVisConstants.ObjectRelationship.MEMBER_READ);
         for (JEVisRelationship rel : member) {
             JEVisObject group = rel.getOtherObject(getCurrentUser());
-            List<JEVisRelationship> root = RelationsManagment.getRelationByType(group, JEVisConstants.Relationship.ROOT);
+            List<JEVisRelationship> root = RelationsManagment.getRelationByType(group, JEVisConstants.ObjectRelationship.ROOT);
             for (JEVisRelationship rel2 : root) {
                 JEVisObject obj = rel2.getOtherObject(group);
                 roots.add(obj);
             }
         }
 
-        for (JEVisRelationship rel : RelationsManagment.getRelationByType(_user, JEVisConstants.Relationship.ROOT)) {
+        for (JEVisRelationship rel : RelationsManagment.getRelationByType(_user, JEVisConstants.ObjectRelationship.ROOT)) {
             roots.add(rel.getOtherObject(getCurrentUser()));
         }
 
         return roots;
     }
 
+    @Override
     public JEVisObject getObject(Long id) throws JEVisException {
         try {
             JEVisObject obj = null;
@@ -214,6 +227,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
     }
 
+    @Override
     public JEVisObject buildLink(String name, JEVisObject parent, JEVisObject linkedObject) throws JEVisException {
         try {
             if (RelationsManagment.canCreate(_user, parent)) {
@@ -228,6 +242,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     }
 
+    @Override
     public List<JEVisObject> getObjects(JEVisClass jevisClass, boolean inherits) throws JEVisException {
 //        System.out.println("getObject by class: " + jevisClass.getName() + " heirs: " + inherits);
         List<JEVisClass> classes = new ArrayList<JEVisClass>();
@@ -260,8 +275,23 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _rt;
     }
 
+    @Override
     public List<JEVisRelationship> getReplationships(int type) throws JEVisException {
         //TODO implement the userrights
         return getRelationshipTable().select(type);
+    }
+
+    protected AttributeTable getAttributeTable() throws JEVisException {
+        if (_at == null) {
+            _at = new AttributeTable(this);
+        }
+        return _at;
+    }
+
+    protected ClassRelationTable getClassRelationshipTable() throws JEVisException {
+        if (_crt == null) {
+            _crt = new ClassRelationTable(this);
+        }
+        return _crt;
     }
 }

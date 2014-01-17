@@ -23,15 +23,20 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import org.jevis.jeapi.JEVisClass;
+import org.jevis.jeapi.JEVisClassRelationship;
+import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisExceptionCodes;
+import org.jevis.jeapi.JEVisRelationship;
 import org.jevis.jeapi.JEVisType;
+import static org.jevis.jeapi.JEVisConstants.*;
 
 /**
  *
@@ -45,10 +50,7 @@ public class JEVisClassSQL implements JEVisClass {
     private String _name = "";
     private boolean isLoaded = false;
     private List<JEVisType> _types;
-    private List<Relation> _relations;
-    private JEVisClass _inheritance;
-    private List<JEVisClass> _okParents;
-    private List<JEVisClass> _oldOkParent;
+    private List<JEVisClassRelationship> _relations;
     private String _oldName = null;
     private boolean _hasChanged = false;
     private boolean _unique;
@@ -63,9 +65,8 @@ public class JEVisClassSQL implements JEVisClass {
             _oldName = _name;
             _discription = rs.getString(ClassTable.COLUMN_DESCRIPTION);
 
-            _inheritance = new JEVisClassSQL(ds, rs.getString(ClassTable.COLUMN_INHERIT));
+//            _inheritance = new JEVisClassSQL(ds, rs.getString(ClassTable.COLUMN_INHERIT));
             _unique = rs.getBoolean(ClassTable.COLUMN_UNIQUE);
-//            System.out.println(_name+ " isUnique "+_unique);
 
 
             byte[] bytes = rs.getBytes(ClassTable.COLUMN_ICON);
@@ -91,10 +92,12 @@ public class JEVisClassSQL implements JEVisClass {
         isLoaded = false;
     }
 
+    @Override
     public String getName() {
         return _name;
     }
 
+    @Override
     public void setName(String name) {
 //        _oldName= _name;
         _name = name;
@@ -105,49 +108,32 @@ public class JEVisClassSQL implements JEVisClass {
         return _icon;
     }
 
+    @Override
     public void setIcon(ImageIcon icon) {
         _icon = icon;
         _hasChanged = true;
     }
 
+    @Override
     public String getDescription() {
         return _discription;
     }
 
+    @Override
     public void setDescription(String discription) {
         _discription = discription;
         _hasChanged = true;
     }
 
-    private List<Relation> getRelations() throws JEVisException {
-        if (_relations == null) {
-            try {
-                ClassRelationTable crt = new ClassRelationTable(_ds);
-                _relations = crt.get(this);
-            } catch (Exception ex) {
-                throw new JEVisException("Eroor while loading class relations", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
-            }
+    @Override
+    public JEVisClass getInheritance() throws JEVisException {
+        for (JEVisClassRelationship rel : getRelationships(ClassRelationship.INHERIT, Direction.FORWARD)) {
+            return rel.getStart();
         }
-        return _relations;
-
+        return null;
     }
 
-    public JEVisClass getInheritance() {
-        return _inheritance;
-    }
-
-    public void setInheritance(JEVisClass jevisClass) {
-        //TODO Check is it ok to inherit? 
-        //TODO Check endles loop
-        try {
-            _hasChanged = true;
-            _inheritance = jevisClass;
-
-        } catch (Exception ex) {
-            System.out.println("Error while Adding an Inherited JEVisClass: " + ex);
-        }
-    }
-
+    @Override
     public JEVisDataSource getDataSource() throws JEVisException {
         return _ds;
     }
@@ -179,9 +165,17 @@ public class JEVisClassSQL implements JEVisClass {
         return true;
     }
 
-    public boolean isAllowedUnder(JEVisClass jevisClass) {
-        for (JEVisClass pClass : getValidParents()) {
-            if (pClass.equals(jevisClass)) {
+    @Override
+    public boolean isAllowedUnder(JEVisClass jevisClass) throws JEVisException {
+        System.out.println("isAllowedUnder: " + jevisClass);
+        List<JEVisClass> vaild = getValidParents();
+        for (JEVisClass pClass : vaild) {
+            System.out.println("pClass: " + pClass);
+        }
+
+        for (JEVisClass pClass : vaild) {
+            System.out.println("compare: " + pClass);
+            if (pClass.getName().equals(jevisClass.getName())) {
                 return true;
             }
         }
@@ -191,8 +185,10 @@ public class JEVisClassSQL implements JEVisClass {
         return false;
     }
 
+    @Override
     public List<JEVisType> getTypes() {
-        if (_types == null) {
+        if (_types == null) { //Cach is disabled for the mean time. TODO iake a good cach implementation
+//        if (true) {
             try {
                 TypeTable tt = new TypeTable(_ds);
                 _types = tt.getAll(this);
@@ -216,6 +212,7 @@ public class JEVisClassSQL implements JEVisClass {
         return null;
     }
 
+    @Override
     public JEVisType getType(String typename) {
         for (JEVisType ty : getTypes()) {
             if (ty.getName().equals(typename)) {
@@ -225,42 +222,28 @@ public class JEVisClassSQL implements JEVisClass {
         return null;
     }
 
-    /**
-     *
-     * @return
-     */
-    public List<JEVisClass> getValidParents() {
-        if (_okParents == null) {
-            try {
-                _okParents = new ArrayList<JEVisClass>();
-                List<Relation> relations = getRelations();
-
-                for (Relation rel : relations) {
-                    if (rel.isValidParent()) {
-                        _okParents.add(new JEVisClassSQL(_ds, rel.getValidParent()));
-                    }
-                }
-
-                if (getInheritance() != null) {
-                    if (!getInheritance().equals(this)) {
-                        _okParents.addAll(getInheritance().getValidParents());
-                    }
-                }
+    @Override
+    public List<JEVisClass> getValidParents() throws JEVisException {
+        List<JEVisClass> vaildParents = new LinkedList<JEVisClass>();
+        List<JEVisClassRelationship> relations = getRelationships();
 
 
-            } catch (Exception ex) {
-                System.out.println("Error while loading Inherited Classes: " + ex);
-                ex.printStackTrace();
+        for (JEVisClassRelationship rel : relations) {
+            if (rel.isType(JEVisConstants.ClassRelationship.OK_PARENT)) {
+                System.out.println("addValidParent: " + rel);
+                vaildParents.add(rel.getOtherClass(this));
             }
         }
-        if (_okParents == null) {
-            System.out.println("return emty getValidParents List");
-            _okParents = new ArrayList<JEVisClass>();
+
+
+        if (getInheritance() != null) {
+            vaildParents.addAll(getInheritance().getValidParents());
         }
 
-        return _okParents;
+        return vaildParents;
     }
 
+    @Override
     public JEVisType buildType(String name) {
         //TODo check userrights
         try {
@@ -283,6 +266,7 @@ public class JEVisClassSQL implements JEVisClass {
 
     }
 
+    @Override
     public void commit() throws JEVisException {
         System.out.println("JEVisClass.commi()");
         if (!RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
@@ -298,61 +282,16 @@ public class JEVisClassSQL implements JEVisClass {
         ClassTable cdb = new ClassTable(_ds);
         cdb.update(this, _oldName);
 
-        //check if the Vaild Parenship has changed
-        if (_oldOkParent != null) {
-            System.out.println("Valid parents have changed");
 
-            //find delete Classes
-            for (JEVisClass jc : _oldOkParent) {
-                boolean exist = false;
-                for (JEVisClass jsNeu : _okParents) {
-                    if (jsNeu.equals(jc)) {
-                        exist = true;
-                    }
-                }
-
-                if (!exist) {
-                    //delete
-                    //ToDo delete
-                }
-            }
-
-            //find new classes
-            for (JEVisClass jsNeu : _okParents) {
-                boolean exist = false;
-                System.out.print("is '" + jsNeu.getName() + "' new?\n  ");
-                for (JEVisClass jc : _oldOkParent) {
-                    System.out.print(" .. " + jc.getName());
-                    if (jsNeu.equals(jc)) {
-                        exist = true;
-                        System.out.print(" .. no");
-                        break;
-                    }
-                }
-
-                if (!exist) {
-                    //add
-                    System.out.println(" .. yes");
-                    System.out.println("add new Parents");
-                    ClassRelationTable crt = new ClassRelationTable(_ds);
-                    crt.putVaildParent(this, jsNeu);
-                }
-                System.out.println("");
-            }
-
-            //ToDo: fix the cached heirs ther ok parents also changed
-
-
-        }
-
-        _oldOkParent = null;
         _hasChanged = false;
     }
 
+    @Override
     public boolean hasChanged() {
         return _hasChanged;
     }
 
+    @Override
     public void rollBack() {
         try {
             JEVisClass original = _ds.getJEVisClass(_name);
@@ -360,46 +299,19 @@ public class JEVisClassSQL implements JEVisClass {
             _discription = original.getDescription();
 
             _icon = original.getIcon();
-            _inheritance = original.getInheritance();
 
             _hasChanged = false;
-            _oldOkParent = null;
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    public void removeValidParent(JEVisClass jevisClass) {
-        _hasChanged = true;
-        getValidParents();
-        if (_oldOkParent == null) {
-            _oldOkParent = new ArrayList<JEVisClass>(_okParents);
-        }
-        _okParents.remove(jevisClass);
-    }
-
-    /**
-     * TODO: check if parent is vails/exists
-     *
-     * @param jevisClass
-     */
-    public void addValidParent(JEVisClass jevisClass) {
-        _hasChanged = true;
-        getValidParents();
-//        System.out.println("VaildParentCount: "+_okParents.size());
-        if (_oldOkParent == null) {
-//            System.out.println("_oldOkParent is null");
-            _oldOkParent = new ArrayList<JEVisClass>(_okParents);
-        }
-        _okParents.add(jevisClass);
-//        System.out.println("_oldOkParent.size: "+_oldOkParent.size());
-
-    }
-
+    @Override
     public boolean isUnique() {
         return _unique;
     }
 
+    @Override
     public void setUnique(boolean unique) {
         _hasChanged = true;
         _unique = unique;
@@ -409,17 +321,89 @@ public class JEVisClassSQL implements JEVisClass {
     public String toString() {
         String inherit = "null";
         String discription = "null";
-        if (_inheritance != null) {
-            inherit = _inheritance.getName();
-        }
-        if (_discription != null) {
-            discription = _discription;
+        try {
+            if (getInheritance() != null) {
+                inherit = getInheritance().getName();
+            }
+            if (_discription != null) {
+                discription = _discription;
+            }
+        } catch (JEVisException ex) {
         }
         return "JEVisClassSQL{" + " name=" + _name + ",discription=" + discription + ", inheritance=" + inherit + ", unique=" + _unique + '}';
     }
 
+    @Override
     public List<JEVisClass> getHeirs() throws JEVisException {
         ClassTable ct = new ClassTable(_ds);
         return ct.getAllHeirs(this);
+    }
+
+    @Override
+    public boolean delete() throws JEVisException {
+        if (RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
+            return _ds.getClassTable().delete(this);
+        } else {
+            throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
+        }
+
+    }
+
+    @Override
+    public List<JEVisClassRelationship> getRelationships() throws JEVisException {
+        if (_relations == null) {
+            _relations = _ds.getClassRelationshipTable().get(this);
+        }
+        return _relations;
+    }
+
+    @Override
+    public List<JEVisClassRelationship> getRelationships(int type) throws JEVisException {
+        List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
+
+        for (JEVisClassRelationship cr : getRelationships()) {
+            if (cr.isType(type)) {
+                tmp.add(cr);
+            }
+        }
+
+        return tmp;
+    }
+
+    @Override
+    public List<JEVisClassRelationship> getRelationships(int type, int direction) throws JEVisException {
+        List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
+
+        for (JEVisClassRelationship cr : getRelationships(type)) {
+            if (direction == JEVisConstants.Direction.FORWARD && cr.getStart().equals(this)) {
+                tmp.add(cr);
+            } else if (direction == JEVisConstants.Direction.BACKWARD && cr.getEnd().equals(this)) {
+                tmp.add(cr);
+            }
+        }
+
+        return tmp;
+    }
+
+    @Override
+    public JEVisClassRelationship buildRelationship(JEVisClass jclass, int type, int direction) throws JEVisException {
+        JEVisClassRelationship newRel = null;
+        if (direction == JEVisConstants.Direction.FORWARD) {
+            newRel = _ds.getClassRelationshipTable().insert(jclass, this, type);
+        } else {
+            newRel = _ds.getClassRelationshipTable().insert(this, jclass, type);
+        }
+        if (newRel != null) {
+            _relations.add(newRel);
+        }
+        return newRel;
+
+    }
+
+    @Override
+    public void deleteRelationship(JEVisClassRelationship rel) throws JEVisException {
+        if (_ds.getClassRelationshipTable().delete(rel)) {
+            _relations.remove(rel);
+        }
     }
 }

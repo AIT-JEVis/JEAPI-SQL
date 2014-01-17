@@ -26,8 +26,6 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
@@ -38,6 +36,8 @@ import org.jevis.jeapi.JEVisSelection;
 import org.jevis.jeapi.JEVisMultiSelection;
 import org.jevis.jeapi.JEVisSample;
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -60,6 +60,7 @@ public class JEVisSampleSQL implements JEVisSample {
     private boolean _hasChanged = false;
     private String _filename;
     private byte[] _fileBytes;
+    private Logger logger = LoggerFactory.getLogger(JEVisSampleSQL.class);
 
     public JEVisSampleSQL(JEVisDataSourceSQL ds, JEVisAttribute att, Object value, DateTime ts) throws JEVisException {
         _ds = ds;
@@ -80,7 +81,7 @@ public class JEVisSampleSQL implements JEVisSample {
                 try {
                     _file.loadFromFile((File) value);
                 } catch (IOException ex) {
-                    Logger.getLogger(JEVisSampleSQL.class.getName()).log(Level.SEVERE, null, ex);
+                    logger.error("Cannot load file fom Sample: {}", ex);
                 }
 
             } else if (value instanceof JEVisFile) {
@@ -110,6 +111,7 @@ public class JEVisSampleSQL implements JEVisSample {
 
 //            _jManIP = new JEVisManipulationSQL(_manip);
 
+            _tvalue = rs.getString(SampleTable.COLUMN_VALUE);
 
             if (rs.getBytes(SampleTable.COLUMN_FILE) != null) {
                 _fileBytes = rs.getBytes(SampleTable.COLUMN_FILE);
@@ -146,7 +148,7 @@ public class JEVisSampleSQL implements JEVisSample {
     public String getValueAsString() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.STRING) {
-                System.out.println("Warning the primitive type of this Type is not String");
+                logger.error("Warning the primitive type of this Type is not String");
             }
             return _tvalue.toString();
 
@@ -160,7 +162,7 @@ public class JEVisSampleSQL implements JEVisSample {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.LONG
                     && getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.SELECTION) {
-                System.out.println("Warning the primitive type of this Type is not Long or Dynamic List");
+                logger.error("Warning the primitive type of this Type is not Long or Dynamic List");
             }
             return Long.parseLong((String) _tvalue);
 
@@ -173,7 +175,7 @@ public class JEVisSampleSQL implements JEVisSample {
     public Double getValueAsDouble() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.DOUBLE) {
-                System.out.println("Warning the primitive type of this Type is not Double");
+                logger.error("Warning the primitive type of this Type is not Double");
                 return Double.NaN;
             }
             return Double.parseDouble((String) _tvalue);
@@ -190,10 +192,14 @@ public class JEVisSampleSQL implements JEVisSample {
     public Boolean getValueAsBoolean() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.BOOLEAN) {
-                System.out.println("Error the primitive type of this Type is not Boolean");
+                logger.error("Error the primitive type of this Type is not Boolean");
                 return null;
             }
-            return Boolean.parseBoolean((String) _tvalue);
+            if (((String) _tvalue).equals("1")) {
+                return true;
+            } else {
+                return false;
+            }
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -219,7 +225,7 @@ public class JEVisSampleSQL implements JEVisSample {
     public JEVisFile getValueAsFile() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.FILE) {
-                System.out.println("Error the primitive type of this Type is not byte");
+                logger.error("Error the primitive type of this Type is not byte");
                 return null;
             }
 
@@ -241,7 +247,7 @@ public class JEVisSampleSQL implements JEVisSample {
     public JEVisSelection getValueAsSelection() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.SELECTION) {
-                System.out.println("Error the primitive type of this Type is not selection");
+                logger.error("Error the primitive type of this Type is not selection");
                 return null;
             }
 
@@ -263,7 +269,7 @@ public class JEVisSampleSQL implements JEVisSample {
     public JEVisMultiSelection getValueAsMultiSelection() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.SELECTION) {
-                System.out.println("Error the primitive type of this Type is not MultiSelection ");
+                logger.error("Error the primitive type of this Type is not MultiSelection ");
                 return null;
             }
 

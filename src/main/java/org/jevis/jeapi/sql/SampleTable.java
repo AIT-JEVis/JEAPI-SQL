@@ -185,6 +185,9 @@ public class SampleTable {
 
 
             count = ps.executeUpdate();
+            if (count > 0) {
+                _ds.getAttributeTable().updateAttributeTS(attribute);
+            }
 
             return count;
         } catch (Exception ex) {

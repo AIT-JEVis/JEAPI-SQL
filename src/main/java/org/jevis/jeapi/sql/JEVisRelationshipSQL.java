@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009 - 2014 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2014 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -102,6 +102,50 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
 
     @Override
     public String toString() {
-        return "JEVisRelationshipImp{" + "start=" + _start + ", end=" + _end + ", type=" + _type + '}';
+        String typeName = "unknown(" + _type + ")";
+        switch (_type) {
+            case 1:
+                typeName = "Parent";
+                break;
+            case 2:
+                typeName = "Link";
+                break;
+            case 3:
+                typeName = "Root";
+                break;
+            case 4:
+                typeName = "Source";
+                break;
+            case 5:
+                typeName = "Service";
+                break;
+            case 6:
+                typeName = "Input";
+                break;
+            case 7:
+                typeName = "Data";
+                break;
+            case 100:
+                typeName = "Owner";
+                break;
+            case 101:
+                typeName = "Member - Read";
+                break;
+            case 102:
+                typeName = "Member - Write";
+                break;
+            case 103:
+                typeName = "Member - Exe";
+                break;
+            case 104:
+                typeName = "Member - Create";
+                break;
+            case 105:
+                typeName = "Member - Delete";
+                break;
+        }
+
+
+        return "JEVisRelationshipImp{" + "start=" + _start + ", end=" + _end + ", type=" + typeName + '}';
     }
 }
