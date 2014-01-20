@@ -126,8 +126,7 @@ public class ObjectTable {
                 + " from " + TABLE
                 + " left join " + RelationshipTable.TABLE
                 + " on " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_START
-                + " left join " + RelationshipTable.TABLE
-                + " on " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_END
+                + " and " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_END
                 + " where " + TABLE + "." + COLUMN_CLASS + " in (";
 
         PreparedStatement ps = null;
@@ -148,7 +147,6 @@ public class ObjectTable {
             sql += ") and " + TABLE + "." + COLUMN_DELETE + " is null";
 
             ps = _connection.prepareStatement(sql);
-            logger.debug("getObject.SQl : {}. ", ps);
 
             for (int i = 0; i < classes.size(); i++) {
                 JEVisClass cl = classes.get(i);
@@ -157,6 +155,8 @@ public class ObjectTable {
 
 
             rs = ps.executeQuery();
+            logger.debug("getObject.SQl : {}. ", ps);
+            System.out.println("getObject.SQl : " + ps);
 
             while (rs.next()) {
                 objects.add(new JEVisObjectSQL(_ds, rs));
