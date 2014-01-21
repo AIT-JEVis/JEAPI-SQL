@@ -288,9 +288,6 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     }
 
     public JEVisSample buildSample(DateTime ts, Object value, String note) throws JEVisException {
-
-
-
 //        System.out.println("build sample: " + ts + "  " + value + "   " + note);
         if (ts == null) {
             ts = new DateTime();
@@ -334,9 +331,27 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
 
 
+
+
+
         return "JEVisAttributeSQL{" + "name=" + _name + ", lastValue=" + lastV
                 + ", minTS=" + _minTS + ", maxTS=" + _maxTS + ", object="
                 + _object.getID() + ", period=" + _period + ", sampleCount="
                 + _sampleCount + '}';
+    }
+
+    @Override
+    public int compareTo(JEVisAttribute compareObject) {
+        try {
+            if (getType().getGUIPosition() < compareObject.getType().getGUIPosition()) {
+                return -1;
+            } else if (getType().getGUIPosition() == compareObject.getType().getGUIPosition()) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } catch (JEVisException ex) {
+            return 1;
+        }
     }
 }

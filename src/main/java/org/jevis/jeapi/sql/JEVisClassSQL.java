@@ -23,6 +23,7 @@ import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.sql.ResultSet;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -54,6 +55,7 @@ public class JEVisClassSQL implements JEVisClass {
     private String _oldName = null;
     private boolean _hasChanged = false;
     private boolean _unique;
+    private JEVisClass _inheritance = null;
 
     public JEVisClassSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         _ds = ds;
@@ -127,10 +129,8 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public JEVisClass getInheritance() throws JEVisException {
-        for (JEVisClassRelationship rel : getRelationships(ClassRelationship.INHERIT, Direction.FORWARD)) {
-            return rel.getStart();
-        }
-        return null;
+        getFixedRelationships();
+        return _inheritance;
     }
 
     @Override
@@ -179,31 +179,32 @@ public class JEVisClassSQL implements JEVisClass {
                 return true;
             }
         }
-
-
-
         return false;
     }
 
     @Override
     public List<JEVisType> getTypes() {
-        if (_types == null) { //Cach is disabled for the mean time. TODO iake a good cach implementation
-//        if (true) {
+        if (_types == null) {
             try {
                 TypeTable tt = new TypeTable(_ds);
                 _types = tt.getAll(this);
+
+                if (getInheritance() != null) {
+                    _types.addAll(getInheritance().getTypes());
+                }
+
+                Collections.sort(_types);
 
             } catch (Exception ex) {
                 System.out.println("error while getting Attributes: " + ex);
                 return new ArrayList<JEVisType>();
             }
-
         }
 
         return _types;
     }
 
-    public JEVisType getType(JEVisType type) {
+    public JEVisType getType(JEVisType type) throws JEVisException {
         for (JEVisType ty : getTypes()) {
             if (ty.equals(type)) {
                 return ty;
@@ -213,7 +214,7 @@ public class JEVisClassSQL implements JEVisClass {
     }
 
     @Override
-    public JEVisType getType(String typename) {
+    public JEVisType getType(String typename) throws JEVisException {
         for (JEVisType ty : getTypes()) {
             if (ty.getName().equals(typename)) {
                 return ty;
@@ -224,21 +225,26 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public List<JEVisClass> getValidParents() throws JEVisException {
+        if (getInheritance() != null) {
+            return getInheritance().getValidParents();
+        }
+
         List<JEVisClass> vaildParents = new LinkedList<JEVisClass>();
         List<JEVisClassRelationship> relations = getRelationships();
 
 
         for (JEVisClassRelationship rel : relations) {
             if (rel.isType(JEVisConstants.ClassRelationship.OK_PARENT)) {
-                System.out.println("addValidParent: " + rel);
                 vaildParents.add(rel.getOtherClass(this));
+                vaildParents.addAll(rel.getOtherClass(this).getHeirs());
             }
         }
 
 
-        if (getInheritance() != null) {
-            vaildParents.addAll(getInheritance().getValidParents());
-        }
+//        if (getInheritance() != null) {
+//            vaildParents.addAll(getInheritance().getValidParents());
+//        }
+        Collections.sort(vaildParents);
 
         return vaildParents;
     }
@@ -335,8 +341,13 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public List<JEVisClass> getHeirs() throws JEVisException {
-        ClassTable ct = new ClassTable(_ds);
-        return ct.getAllHeirs(this);
+        List<JEVisClass> heirs = new LinkedList<JEVisClass>();
+        for (JEVisClassRelationship cr : getRelationships(ClassRelationship.INHERIT, Direction.BACKWARD)) {
+            heirs.add(cr.getStart());
+            heirs.addAll(cr.getStart().getHeirs());
+        }
+
+        return heirs;
     }
 
     @Override
@@ -349,17 +360,37 @@ public class JEVisClassSQL implements JEVisClass {
 
     }
 
-    @Override
-    public List<JEVisClassRelationship> getRelationships() throws JEVisException {
+    private List<JEVisClassRelationship> getFixedRelationships() throws JEVisException {
         if (_relations == null) {
             _relations = _ds.getClassRelationshipTable().get(this);
+
+            for (JEVisClassRelationship crel : _relations) {
+                if (crel.isType(ClassRelationship.INHERIT) && crel.getStart().getName().equals(_name)) {
+                    _inheritance = crel.getEnd();
+                }
+            }
+
+//            if (_inheritance != null) {
+//                List<JEVisClassRelationship> inheritRel = _inheritance.getRelationships();
+//                for (JEVisClassRelationship crel : inheritRel) {
+//                    ((JEVisClassRelationshipSQL) crel).setHeir(this);//TODO: make a save implementation
+//                }
+//                _relations.addAll(inheritRel);
+//            }
         }
+
         return _relations;
+    }
+
+    @Override
+    public List<JEVisClassRelationship> getRelationships() throws JEVisException {
+        return getFixedRelationships();
     }
 
     @Override
     public List<JEVisClassRelationship> getRelationships(int type) throws JEVisException {
         List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
+
 
         for (JEVisClassRelationship cr : getRelationships()) {
             if (cr.isType(type)) {
@@ -388,12 +419,12 @@ public class JEVisClassSQL implements JEVisClass {
     @Override
     public JEVisClassRelationship buildRelationship(JEVisClass jclass, int type, int direction) throws JEVisException {
         JEVisClassRelationship newRel = null;
-        if (direction == JEVisConstants.Direction.FORWARD) {
+        if (direction == JEVisConstants.Direction.BACKWARD) {
             newRel = _ds.getClassRelationshipTable().insert(jclass, this, type);
         } else {
             newRel = _ds.getClassRelationshipTable().insert(this, jclass, type);
         }
-        if (newRel != null) {
+        if (newRel != null && _relations != null) {
             _relations.add(newRel);
         }
         return newRel;
@@ -404,6 +435,15 @@ public class JEVisClassSQL implements JEVisClass {
     public void deleteRelationship(JEVisClassRelationship rel) throws JEVisException {
         if (_ds.getClassRelationshipTable().delete(rel)) {
             _relations.remove(rel);
+        }
+    }
+
+    @Override
+    public int compareTo(JEVisClass o) {
+        try {
+            return getName().compareTo(o.getName());
+        } catch (JEVisException ex) {
+            return 1;
         }
     }
 }

@@ -250,4 +250,19 @@ public class JEVisTypeSQL implements JEVisType {
         _hasChanged = true;
         cValue = value;
     }
+
+    @Override
+    public int compareTo(JEVisType compareObject) {
+        try {
+            if (getGUIPosition() < compareObject.getGUIPosition()) {
+                return -1;
+            } else if (getGUIPosition() == compareObject.getGUIPosition()) {
+                return 0;
+            } else {
+                return 1;
+            }
+        } catch (JEVisException ex) {
+            return 1;
+        }
+    }
 }

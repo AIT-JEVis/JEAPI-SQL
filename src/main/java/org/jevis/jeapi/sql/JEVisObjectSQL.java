@@ -22,6 +22,7 @@ package org.jevis.jeapi.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.jevis.jeapi.JEVisAttribute;
@@ -151,7 +152,7 @@ public class JEVisObjectSQL implements JEVisObject {
                 }
             }
 
-
+            Collections.sort(_childrenObj);
         }
 
         return _childrenObj;
@@ -178,6 +179,8 @@ public class JEVisObjectSQL implements JEVisObject {
             }
         }
 
+        Collections.sort(chFromType);
+
         return chFromType;
     }
 
@@ -190,51 +193,35 @@ public class JEVisObjectSQL implements JEVisObject {
 
         //Check if attributes are loaded
         //Workaround disable  this simple cach TODO:reimplement
-//        if (_attributes == null) {
-        if (true) {
-            AttributeTable adb = new AttributeTable(_ds);
-            _attributes = adb.getAttributes(this);
-        }
-
-
-
-
-        //allow vaild types, add missing
-        for (JEVisType type : getJEVisClass().getTypes()) {
-            boolean isThere = false;
-            for (JEVisAttribute att : _attributes) {
-                if (att.isType(type)) {
-                    isThere = true;
-                    break;
-                }
-            }
-            if (!isThere) {
-//                System.out.println("add missing attribute: " + type.getName() + " in " + getID());
-                //TODO add commit to DB?
+        if (_attributes == null) {
+            if (true) {
                 AttributeTable adb = new AttributeTable(_ds);
-                adb.insert(type, this);
-                _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
-
+                _attributes = adb.getAttributes(this);
             }
 
+
+            //allow vaild types, add missing
+            for (JEVisType type : getJEVisClass().getTypes()) {
+                boolean isThere = false;
+                for (JEVisAttribute att : _attributes) {
+                    if (att.isType(type)) {
+                        isThere = true;
+                        break;
+                    }
+                }
+                if (!isThere) {
+                    //                System.out.println("add missing attribute: " + type.getName() + " in " + getID());
+                    //TODO add commit to DB?
+                    AttributeTable adb = new AttributeTable(_ds);
+                    adb.insert(type, this);
+                    _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
+
+                }
+
+            }
+            Collections.sort(_attributes);
+
         }
-
-
-        //remove not vaild types
-//        for (JEVisAttribute att : _attributes) {
-//            boolean isValid = false;
-//            for (JEVisType type : getJEVisClass().getTypes()) {
-//                if (att.isType(type)) {
-//                    isValid = true;
-//                    break;
-//                }
-//            }
-//            if (!isValid) {
-//                System.out.println("Remove invalid attribuet: " + att.getName() + " in " + getID());
-//                //TODO: delete from DB?
-//                _attributes.remove(att);
-//            }
-//        }
 
 
         return _attributes;
@@ -335,7 +322,6 @@ public class JEVisObjectSQL implements JEVisObject {
 //        }
     }
 
-    //TODO does this behave different on an link?
     @Override
     public JEVisObject buildObject(String name, JEVisClass jclass) throws JEVisException {
         if (RelationsManagment.canCreate(_ds.getCurrentUser(), this)) {
@@ -376,8 +362,9 @@ public class JEVisObjectSQL implements JEVisObject {
         List<JEVisClassRelationship> crels = getJEVisClass().getRelationships(
                 JEVisConstants.ClassRelationship.NESTEDT,
                 JEVisConstants.Direction.BACKWARD);
+
         for (JEVisClassRelationship crel : crels) {//TODo: test
-            newObj.buildObject(jclass.getName(), crel.getOtherClass((JEVisClass) this));
+            newObj.buildObject(jclass.getName(), crel.getOtherClass((JEVisClass) this.getJEVisClass()));
         }
 
 
@@ -551,5 +538,10 @@ public class JEVisObjectSQL implements JEVisObject {
         logger.debug("Add relationship to object: {}", rel);
         //TODO: mabe check if this relation is ok, but this is protected so no prio
         _relationships.add(rel);
+    }
+
+    @Override
+    public int compareTo(JEVisObject o) {
+        return getName().compareTo(o.getName());
     }
 }

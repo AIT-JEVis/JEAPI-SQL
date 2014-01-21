@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import org.jevis.jeapi.JEVisClass;
@@ -149,6 +150,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public List<JEVisClass> getJEVisClasses() throws JEVisException {
         try {
             List<JEVisClass> jClass = getClassTable().getAllObjectClasses();
+            Collections.sort(jClass);
             return jClass;
         } catch (SQLException ex) {
             throw new JEVisException("error while select object class from JEVis MySQL Datsource  ", JEVisExceptionCodes.DATASOURCE_FAILD, ex);
@@ -189,6 +191,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         for (JEVisRelationship rel : RelationsManagment.getRelationByType(_user, JEVisConstants.ObjectRelationship.ROOT)) {
             roots.add(rel.getOtherObject(getCurrentUser()));
         }
+        Collections.sort(roots);
 
         return roots;
     }
@@ -252,7 +255,10 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             classes.addAll(jevisClass.getHeirs());
         }
 
-        return getObjectTable().getObjects(classes);
+        List<JEVisObject> objs = getObjectTable().getObjects(classes);
+        Collections.sort(objs);
+
+        return objs;
     }
 
     protected ObjectTable getObjectTable() throws JEVisException {

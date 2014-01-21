@@ -156,7 +156,6 @@ public class ObjectTable {
 
             rs = ps.executeQuery();
             logger.debug("getObject.SQl : {}. ", ps);
-            System.out.println("getObject.SQl : " + ps);
 
             while (rs.next()) {
                 objects.add(new JEVisObjectSQL(_ds, rs));
