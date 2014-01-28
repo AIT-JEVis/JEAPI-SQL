@@ -195,20 +195,29 @@ public class ObjectTable {
                 ResultSet rs = ps.getGeneratedKeys();
 
                 if (rs.next()) {
+                    //add ownership
+                    for (JEVisRelationship rel : parent.getRelationships()) {
+                        if (rel.isType(JEVisConstants.ObjectRelationship.OWNER) && rel.getStartObject().getID() == parent.getID()) {
+                            _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.ObjectRelationship.OWNER);
+                        }
+                    }
+
+
+                    //and parenshiop or NESTEDT_CLASS depending on the Class
+                    System.out.println("add parent");
                     int relType = -1;
                     if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
-                        relType = JEVisConstants.ObjectRelationship.OWNER;
+                        relType = JEVisConstants.ObjectRelationship.PARENT;
                     } else if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
                         relType = JEVisConstants.ObjectRelationship.NESTEDT_CLASS;
                     }
                     _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), relType);
 
 
-                    for (JEVisRelationship rel : parent.getRelationships()) {
-                        if (rel.isType(JEVisConstants.ObjectRelationship.OWNER)) {
-                            _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.ObjectRelationship.OWNER);
-                        }
-                    }
+
+
+
+
 
 
 
