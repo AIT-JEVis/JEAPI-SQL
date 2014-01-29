@@ -101,7 +101,6 @@ public class RelationshipTable {
             ps.setInt(3, type);
 
             int count = ps.executeUpdate();
-
             if (count == 1) {
                 return new JEVisRelationshipSQL(_ds, start, end, type);
             } else {

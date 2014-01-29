@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009 - 2013 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2012 - 2013 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -35,16 +35,17 @@ import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisRelationship;
 import org.jevis.jeapi.JEVisType;
 import static org.jevis.jeapi.JEVisConstants.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Florian Simon <florian.simon@envidatec.com>
  */
 public class JEVisClassSQL implements JEVisClass {
-
+    
     private JEVisDataSourceSQL _ds;
     private ImageIcon _icon; //TODo is this a file resource?
     private String _discription;
@@ -56,12 +57,13 @@ public class JEVisClassSQL implements JEVisClass {
     private boolean _hasChanged = false;
     private boolean _unique;
     private JEVisClass _inheritance = null;
-
+    private Logger logger = LoggerFactory.getLogger(JEVisClassSQL.class);
+    
     public JEVisClassSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         _ds = ds;
         //todo parsing
         isLoaded = true;
-
+        
         try {
             _name = rs.getString(ClassTable.COLUMN_NAME);
             _oldName = _name;
@@ -69,8 +71,8 @@ public class JEVisClassSQL implements JEVisClass {
 
 //            _inheritance = new JEVisClassSQL(ds, rs.getString(ClassTable.COLUMN_INHERIT));
             _unique = rs.getBoolean(ClassTable.COLUMN_UNIQUE);
-
-
+            
+            
             byte[] bytes = rs.getBytes(ClassTable.COLUMN_ICON);
             if (bytes != null && bytes.length > 0) {
                 BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
@@ -83,73 +85,73 @@ public class JEVisClassSQL implements JEVisClass {
         } catch (Exception ex) {
             throw new JEVisException("Cannot parse Class: " + _name, JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
-
-
-
+        
+        
+        
     }
-
+    
     public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
         _ds = ds;
         _name = name;
         isLoaded = false;
     }
-
+    
     @Override
     public String getName() {
         return _name;
     }
-
+    
     @Override
     public void setName(String name) {
 //        _oldName= _name;
         _name = name;
         _hasChanged = true;
     }
-
+    
     public ImageIcon getIcon() {
         return _icon;
     }
-
+    
     @Override
     public void setIcon(ImageIcon icon) {
         _icon = icon;
         _hasChanged = true;
     }
-
+    
     @Override
     public String getDescription() {
         return _discription;
     }
-
+    
     @Override
     public void setDescription(String discription) {
         _discription = discription;
         _hasChanged = true;
     }
-
+    
     @Override
     public JEVisClass getInheritance() throws JEVisException {
         getFixedRelationships();
         return _inheritance;
     }
-
+    
     @Override
     public JEVisDataSource getDataSource() throws JEVisException {
         return _ds;
     }
-
+    
     public String translate(Locale locale) {
         System.out.println("translate Not supported yet.");
         return getName();
     }
-
+    
     @Override
     public int hashCode() {
         int hash = 7;
         hash = 43 * hash + (this._name != null ? this._name.hashCode() : 0);
         return hash;
     }
-
+    
     @Override
     public boolean equals(Object obj) {
         if (obj == null) {
@@ -164,7 +166,7 @@ public class JEVisClassSQL implements JEVisClass {
         }
         return true;
     }
-
+    
     @Override
     public boolean isAllowedUnder(JEVisClass jevisClass) throws JEVisException {
         System.out.println("isAllowedUnder: " + jevisClass);
@@ -172,7 +174,7 @@ public class JEVisClassSQL implements JEVisClass {
         for (JEVisClass pClass : vaild) {
             System.out.println("pClass: " + pClass);
         }
-
+        
         for (JEVisClass pClass : vaild) {
             System.out.println("compare: " + pClass);
             if (pClass.getName().equals(jevisClass.getName())) {
@@ -181,29 +183,29 @@ public class JEVisClassSQL implements JEVisClass {
         }
         return false;
     }
-
+    
     @Override
     public List<JEVisType> getTypes() {
         if (_types == null) {
             try {
                 TypeTable tt = new TypeTable(_ds);
                 _types = tt.getAll(this);
-
+                
                 if (getInheritance() != null) {
                     _types.addAll(getInheritance().getTypes());
                 }
-
+                
                 Collections.sort(_types);
-
+                
             } catch (Exception ex) {
                 System.out.println("error while getting Attributes: " + ex);
                 return new ArrayList<JEVisType>();
             }
         }
-
+        
         return _types;
     }
-
+    
     public JEVisType getType(JEVisType type) throws JEVisException {
         for (JEVisType ty : getTypes()) {
             if (ty.equals(type)) {
@@ -212,7 +214,7 @@ public class JEVisClassSQL implements JEVisClass {
         }
         return null;
     }
-
+    
     @Override
     public JEVisType getType(String typename) throws JEVisException {
         for (JEVisType ty : getTypes()) {
@@ -222,33 +224,34 @@ public class JEVisClassSQL implements JEVisClass {
         }
         return null;
     }
-
+    
     @Override
     public List<JEVisClass> getValidParents() throws JEVisException {
         if (getInheritance() != null) {
             return getInheritance().getValidParents();
         }
-
+        
         List<JEVisClass> vaildParents = new LinkedList<JEVisClass>();
         List<JEVisClassRelationship> relations = getRelationships();
-
-
+        
+        
         for (JEVisClassRelationship rel : relations) {
-            if (rel.isType(JEVisConstants.ClassRelationship.OK_PARENT)) {
-                vaildParents.add(rel.getOtherClass(this));
-                vaildParents.addAll(rel.getOtherClass(this).getHeirs());
+            try {
+                if (rel.isType(JEVisConstants.ClassRelationship.OK_PARENT)
+                        && rel.getStart().equals(this)) {
+                    vaildParents.add(rel.getOtherClass(this));
+                    vaildParents.addAll(rel.getOtherClass(this).getHeirs());
+                }
+            } catch (Exception ex) {
+                logger.error("An JEClassRelationship had an error for '{}': {}", getName(), ex);
             }
         }
-
-
-//        if (getInheritance() != null) {
-//            vaildParents.addAll(getInheritance().getValidParents());
-//        }
+        
         Collections.sort(vaildParents);
-
+        
         return vaildParents;
     }
-
+    
     @Override
     public JEVisType buildType(String name) {
         //TODo check userrights
@@ -263,66 +266,66 @@ public class JEVisClassSQL implements JEVisClass {
                 }
             }
             return null;
-
+            
         } catch (Exception ex) {
             ex.printStackTrace();
             return null;
         }
-
-
+        
+        
     }
-
+    
     @Override
     public void commit() throws JEVisException {
         System.out.println("JEVisClass.commi()");
         if (!RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
-
-
+        
+        
         if (!_hasChanged) {
             System.out.println("Nothing changed.. Abort ");
             return;
         }
-
+        
         ClassTable cdb = new ClassTable(_ds);
         cdb.update(this, _oldName);
-
-
+        
+        
         _hasChanged = false;
     }
-
+    
     @Override
     public boolean hasChanged() {
         return _hasChanged;
     }
-
+    
     @Override
     public void rollBack() {
         try {
             JEVisClass original = _ds.getJEVisClass(_name);
             _name = original.getName();
             _discription = original.getDescription();
-
+            
             _icon = original.getIcon();
-
+            
             _hasChanged = false;
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
-
+    
     @Override
     public boolean isUnique() {
         return _unique;
     }
-
+    
     @Override
     public void setUnique(boolean unique) {
         _hasChanged = true;
         _unique = unique;
     }
-
+    
     @Override
     public String toString() {
         String inherit = "null";
@@ -338,7 +341,7 @@ public class JEVisClassSQL implements JEVisClass {
         }
         return "JEVisClassSQL{" + " name=" + _name + ",discription=" + discription + ", inheritance=" + inherit + ", unique=" + _unique + '}';
     }
-
+    
     @Override
     public List<JEVisClass> getHeirs() throws JEVisException {
         List<JEVisClass> heirs = new LinkedList<JEVisClass>();
@@ -346,10 +349,10 @@ public class JEVisClassSQL implements JEVisClass {
             heirs.add(cr.getStart());
             heirs.addAll(cr.getStart().getHeirs());
         }
-
+        
         return heirs;
     }
-
+    
     @Override
     public boolean delete() throws JEVisException {
         if (RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
@@ -357,13 +360,13 @@ public class JEVisClassSQL implements JEVisClass {
         } else {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
-
+        
     }
-
+    
     private List<JEVisClassRelationship> getFixedRelationships() throws JEVisException {
         if (_relations == null) {
             _relations = _ds.getClassRelationshipTable().get(this);
-
+            
             for (JEVisClassRelationship crel : _relations) {
                 if (crel.isType(ClassRelationship.INHERIT) && crel.getStart().getName().equals(_name)) {
                     _inheritance = crel.getEnd();
@@ -378,33 +381,33 @@ public class JEVisClassSQL implements JEVisClass {
 //                _relations.addAll(inheritRel);
 //            }
         }
-
+        
         return _relations;
     }
-
+    
     @Override
     public List<JEVisClassRelationship> getRelationships() throws JEVisException {
         return getFixedRelationships();
     }
-
+    
     @Override
     public List<JEVisClassRelationship> getRelationships(int type) throws JEVisException {
         List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
-
-
+        
+        
         for (JEVisClassRelationship cr : getRelationships()) {
             if (cr.isType(type)) {
                 tmp.add(cr);
             }
         }
-
+        
         return tmp;
     }
-
+    
     @Override
     public List<JEVisClassRelationship> getRelationships(int type, int direction) throws JEVisException {
         List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
-
+        
         for (JEVisClassRelationship cr : getRelationships(type)) {
             if (direction == JEVisConstants.Direction.FORWARD && cr.getStart().equals(this)) {
                 tmp.add(cr);
@@ -412,10 +415,10 @@ public class JEVisClassSQL implements JEVisClass {
                 tmp.add(cr);
             }
         }
-
+        
         return tmp;
     }
-
+    
     @Override
     public JEVisClassRelationship buildRelationship(JEVisClass jclass, int type, int direction) throws JEVisException {
         JEVisClassRelationship newRel = null;
@@ -428,16 +431,16 @@ public class JEVisClassSQL implements JEVisClass {
             _relations.add(newRel);
         }
         return newRel;
-
+        
     }
-
+    
     @Override
     public void deleteRelationship(JEVisClassRelationship rel) throws JEVisException {
         if (_ds.getClassRelationshipTable().delete(rel)) {
             _relations.remove(rel);
         }
     }
-
+    
     @Override
     public int compareTo(JEVisClass o) {
         try {

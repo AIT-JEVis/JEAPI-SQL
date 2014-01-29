@@ -49,6 +49,8 @@ public class JEVisClassRelationshipSQL implements JEVisClassRelationship {
             _type = rs.getInt(ClassRelationTable.COLUMN_TYPE);
             _ds = ds;
 
+//            System.out.println("new Rel: " + _start + "->" + _end + "=" + _type);
+
         } catch (SQLException ex) {
             ex.printStackTrace();
             throw new JEVisException("Cannot parse Classrelationship", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -126,7 +128,7 @@ public class JEVisClassRelationshipSQL implements JEVisClassRelationship {
         try {
             start = getStart().getName();
             end = getEnd().getName();
-        } catch (JEVisException ex) {
+        } catch (Exception ex) {
         }
         return "JEVisClassRelationshipSQL{ type=" + _type + ", '" + start + "'-> '" + end + "}";
     }
