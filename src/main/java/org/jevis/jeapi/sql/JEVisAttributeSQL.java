@@ -1,7 +1,7 @@
 /**
- * Copyright (C) 2009 - 2013 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2013 Envidatec GmbH <info@envidatec.com>
  *
- * This file is part of JEWebService.
+ * This file is part of JEAPI-SQL.
  *
  * JEAPI-SQL is free software: you can redistribute it and/or modify it under
  * the terms of the GNU General Public License as published by the Free Software
@@ -149,10 +149,11 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 }
                 JEVisSampleSQL sqls = (JEVisSampleSQL) sample;
                 sqls.setChanged(false);
+                //TODO make this save
             }
         }
 
-        _sampleCount = _sampleCount + count;
+
         commit();
 
         return count;//todo get real count
@@ -163,9 +164,17 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         return _sampleCount;
     }
 
-    private void commit() throws JEVisException {
+    protected void commit() throws JEVisException {
         AttributeTable at = new AttributeTable(_ds);
         at.updateAttributeTS(this);
+        List<JEVisAttribute> atts = at.getAttributes(_object);
+        for (JEVisAttribute att : atts) {
+            if (att.getName().equals(getName())) {
+                _sampleCount = att.getSampleCount();
+                _minTS = att.getTimestampFromFirstSample();
+                _maxTS = att.getTimestampFromLastSample();
+            }
+        }
 
     }
 
@@ -353,5 +362,9 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         } catch (JEVisException ex) {
             return 1;
         }
+    }
+
+    protected void increasedCount() {
+        _sampleCount++;
     }
 }

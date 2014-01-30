@@ -125,43 +125,83 @@ public class AttributeTable {
      * @throws SQLException
      * @throws UnsupportedEncodingException
      */
+//    public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
+//        String sql = "update " + TABLE
+//                + " set "
+//                + COLUMN_MAX_TS + "=?,"
+//                + COLUMN_MIN_TS + "=?,"
+//                + COLUMN_COUNT + "=?"
+//                + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
+//
+//        PreparedStatement ps = null;
+//
+//        try {
+//            _ds.addQuery();
+//            ps = _connection.prepareStatement(sql);
+//
+//            if (att.getTimestampFromLastSample() != null) {
+//                ps.setTimestamp(1, new Timestamp(att.getTimestampFromLastSample().getMillis()));
+//            } else {
+//                ps.setNull(1, Types.TIMESTAMP);
+//            }
+//
+//            if (att.getTimestampFromFirstSample() != null) {
+//                ps.setTimestamp(2, new Timestamp(att.getTimestampFromFirstSample().getMillis()));
+//            } else {
+//                ps.setNull(2, Types.TIMESTAMP);
+//            }
+//
+//            //TODo better let the DB handel this if the performance is ok
+//            ps.setLong(3, att.getSampleCount());
+//
+//            ps.setLong(4, att.getObject().getID());
+//            ps.setString(5, att.getName());
+////            System.out.println("update attribute: \n"+ps);
+//
+//            //TODO return this??
+//            int count = ps.executeUpdate();
+//
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            throw new JEVisException("Error while updateing attribute ", 4233, ex);
+//        } finally {
+//            if (ps != null) {
+//                try {
+//                    ps.close();
+//                } catch (SQLException e) { /*ignored*/ }
+//            }
+//        }
+//    }
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
-//        String sql = "select min("+SampleTable.COLUMN_TIMESTAMP+") as min,"
-//                + " max("+SampleTable.COLUMN_TIMESTAMP+") as max"
-//                + " from " + SampleTable.TABLE
-//                + " where "+ SampleTable.COLUMN_OBJECT + "=?"
-//                + " and "+SampleTable.COLUMN_ATTRIBUTE+"=?";
-
         String sql = "update " + TABLE
                 + " set "
-                + COLUMN_MAX_TS + "=?,"
-                + COLUMN_MIN_TS + "=?,"
-                + COLUMN_COUNT + "=?"
+                + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
+                + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
+                + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"
                 + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
+
         PreparedStatement ps = null;
 
         try {
             _ds.addQuery();
             ps = _connection.prepareStatement(sql);
 
-            if (att.getTimestampFromLastSample() != null) {
-                ps.setTimestamp(1, new Timestamp(att.getTimestampFromLastSample().getMillis()));
-            } else {
-                ps.setNull(1, Types.TIMESTAMP);
-            }
+            //1. sub
+            ps.setLong(1, att.getObject().getID());
+            ps.setString(2, att.getName());
 
-            if (att.getTimestampFromFirstSample() != null) {
-                ps.setTimestamp(2, new Timestamp(att.getTimestampFromFirstSample().getMillis()));
-            } else {
-                ps.setNull(2, Types.TIMESTAMP);
-            }
+            //2.sub
+            ps.setLong(3, att.getObject().getID());
+            ps.setString(4, att.getName());
 
+            //3.sub
+            ps.setLong(5, att.getObject().getID());
+            ps.setString(6, att.getName());
 
-            ps.setLong(3, att.getSampleCount());
-
-            ps.setLong(4, att.getObject().getID());
-            ps.setString(5, att.getName());
-//            System.out.println("update attribute: \n"+ps);
+            //when
+            ps.setLong(7, att.getObject().getID());
+            ps.setString(8, att.getName());
+            System.out.println("update attribute: \n" + ps);
 
             //TODO return this??
             int count = ps.executeUpdate();

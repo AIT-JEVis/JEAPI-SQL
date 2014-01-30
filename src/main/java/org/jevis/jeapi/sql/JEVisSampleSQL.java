@@ -25,6 +25,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisConstants;
@@ -136,15 +137,18 @@ public class JEVisSampleSQL implements JEVisSample {
         _hasChanged = true;
     }
 
+    @Override
     public DateTime getTimestamp() {
         return _ts;
     }
 
+    @Override
     public Object getValue() {
         return _tvalue;
     }
 
     //TODP better error handling
+    @Override
     public String getValueAsString() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.STRING) {
@@ -158,6 +162,7 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
+    @Override
     public Long getValueAsLong() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.LONG
@@ -172,6 +177,7 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
+    @Override
     public Double getValueAsDouble() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.DOUBLE) {
@@ -189,6 +195,7 @@ public class JEVisSampleSQL implements JEVisSample {
     /**
      * {@inheritDoc}
      */
+    @Override
     public Boolean getValueAsBoolean() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.BOOLEAN) {
@@ -222,6 +229,7 @@ public class JEVisSampleSQL implements JEVisSample {
 //            return null;
 //        }
 //    }
+    @Override
     public JEVisFile getValueAsFile() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.FILE) {
@@ -244,6 +252,7 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
+    @Override
     public JEVisSelection getValueAsSelection() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.SELECTION) {
@@ -266,6 +275,7 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
+    @Override
     public JEVisMultiSelection getValueAsMultiSelection() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.SELECTION) {
@@ -288,19 +298,23 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
+    @Override
     public void setValue(Object value) throws ClassCastException {
         _tvalue = value;
         _hasChanged = true;
     }
 
+    @Override
     public JEVisAttribute getAttribute() {
         return _jAttribute;
     }
 
+    @Override
     public String getNote() {
         return _note;
     }
 
+    @Override
     public void setNote(String note) {
         _hasChanged = true;
         _note = note;
@@ -326,10 +340,12 @@ public class JEVisSampleSQL implements JEVisSample {
         return "JEVisSampleImp{" + "ts=" + _ts + ", value=" + val + ", note=" + _note + " '}'";
     }
 
+    @Override
     public JEVisDataSource getDataSource() throws JEVisException {
         return _ds;
     }
 
+    @Override
     public void commit() throws JEVisException {
         if (!_hasChanged) {
             System.out.println("Nothing changed.. Abort ");
@@ -337,19 +353,26 @@ public class JEVisSampleSQL implements JEVisSample {
         }
         System.out.println("commiting changes");
 
-
-
-        //TODO: use an global SampleTable object so the not every sample need to create one->performace/memory
-        SampleTable sb = new SampleTable(_ds);
-
-        //TODO: maybe implement an Update funktion but for now we delete and the insert the sample 
-//        sb.deleteSamples(_jAttribute, _ts, _ts);
-        List samples = new ArrayList(); //TODO: maybe we need a new funktion to import without list
+        //wo do not use the direct way to cnadel the sample count
+        List<JEVisSample> samples = new LinkedList<JEVisSample>();
         samples.add(this);
-        sb.insertSamples(_jAttribute, samples);
+        getAttribute().addSamples(samples);
+        _hasChanged = false;
+
+//        //TODO: use an global SampleTable object so the not every sample need to create one->performace/memory
+//        SampleTable sb = new SampleTable(_ds);
+//
+//        //TODO: maybe implement an Update funktion but for now we delete and the insert the sample 
+////        sb.deleteSamples(_jAttribute, _ts, _ts);
+//        List samples = new ArrayList(); //TODO: maybe we need a new funktion to import without list
+//        samples.add(this);
+//        sb.insertSamples(_jAttribute, samples);
+//
+
 
     }
 
+    @Override
     public void rollBack() throws JEVisException {
         SampleTable sb = new SampleTable(_ds);
         List<JEVisSample> js = sb.getSamples(_jAttribute, _ts, _ts);
@@ -364,6 +387,7 @@ public class JEVisSampleSQL implements JEVisSample {
         _hasChanged = false;
     }
 
+    @Override
     public boolean hasChanged() {
         return _hasChanged;
     }
