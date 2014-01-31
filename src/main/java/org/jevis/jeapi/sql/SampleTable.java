@@ -208,20 +208,34 @@ public class SampleTable {
 
         String sql = "select * from " + TABLE
                 + " where " + COLUMN_OBJECT + "=?"
-                + " and " + COLUMN_ATTRIBUTE + "=?"
-                + " and " + COLUMN_TIMESTAMP + ">=?"
-                + " and " + COLUMN_TIMESTAMP + "<=?"
-                + " order by " + COLUMN_TIMESTAMP;
+                + " and " + COLUMN_ATTRIBUTE + "=?";
+
+
+        if (from != null) {
+            sql += " and " + COLUMN_TIMESTAMP + ">=?";
+        }
+        if (until != null) {
+            sql += " and " + COLUMN_TIMESTAMP + "<=?";
+        }
+        sql += " order by " + COLUMN_TIMESTAMP;
 
         PreparedStatement ps = null;
 
         try {
 
             ps = _connection.prepareStatement(sql);
-            ps.setLong(1, att.getObject().getID());
-            ps.setString(2, att.getName());
-            ps.setTimestamp(3, new Timestamp(from.getMillis()));
-            ps.setTimestamp(4, new Timestamp(until.getMillis()));
+            int pos = 1;
+
+            ps.setLong(pos++, att.getObject().getID());
+            ps.setString(pos++, att.getName());
+            if (from != null) {
+                ps.setTimestamp(pos++, new Timestamp(from.getMillis()));
+            }
+            if (until != null) {
+                ps.setTimestamp(pos++, new Timestamp(until.getMillis()));
+            }
+
+
             System.out.println("SQL: " + ps);
             ResultSet rs = ps.executeQuery();
 

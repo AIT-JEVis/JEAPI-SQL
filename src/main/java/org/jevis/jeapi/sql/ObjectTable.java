@@ -205,10 +205,14 @@ public class ObjectTable {
 
                     //and parenshiop or NESTEDT_CLASS depending on the Class
                     System.out.println("add parent");
-                    int relType = -1;
-                    if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
-                        relType = JEVisConstants.ObjectRelationship.PARENT;
-                    } else if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
+                    int relType = JEVisConstants.ObjectRelationship.PARENT;//not very save
+//                    if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
+//                        relType = JEVisConstants.ObjectRelationship.PARENT;
+//                    } else 
+
+
+
+                    if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
                         relType = JEVisConstants.ObjectRelationship.NESTEDT_CLASS;
                     }
                     _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), relType);

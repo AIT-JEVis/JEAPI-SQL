@@ -173,16 +173,24 @@ public class RelationsManagment {
     }
 
     public static boolean isParentRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
+
+        if (child.getInheritance() != null) {
+            return isParentRelationship(parent, child.getInheritance());
+        }
+
         for (JEVisClassRelationship rel : parent.getRelationships(OK_PARENT)) {
             if (rel.getOtherClass(parent).equals(child)) {
                 return true;
             }
         }
-
         return false;
     }
 
     public static boolean isNestedRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
+        if (child.getInheritance() != null) {
+            return isNestedRelationship(parent, child.getInheritance());
+        }
+
         for (JEVisClassRelationship rel : parent.getRelationships(NESTEDT)) {
             if (rel.getOtherClass(parent).equals(child)) {
                 return true;
