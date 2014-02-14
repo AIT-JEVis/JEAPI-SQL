@@ -28,8 +28,6 @@ import java.util.List;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisClassRelationship;
 import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisRelationship;
-import sun.util.logging.resources.logging;
 
 /**
  *

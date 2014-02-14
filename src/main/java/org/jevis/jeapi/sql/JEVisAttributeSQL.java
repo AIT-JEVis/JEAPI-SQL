@@ -352,6 +352,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     @Override
     public int compareTo(JEVisAttribute compareObject) {
         try {
+
             if (getType().getGUIPosition() < compareObject.getType().getGUIPosition()) {
                 return -1;
             } else if (getType().getGUIPosition() == compareObject.getType().getGUIPosition()) {
@@ -359,7 +360,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
             } else {
                 return 1;
             }
-        } catch (JEVisException ex) {
+        } catch (Exception ex) {
             return 1;
         }
     }

@@ -70,14 +70,22 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         _dbSchema = schema;
         _jevisUsername = jevisUser;
         _jevisUserPW = jevisPW;
-        getConnection();
+//        getConnection();
+    }
+
+    @Override
+    public boolean connect(String username, String password) throws JEVisException {
+        _jevisUsername = username;
+        _jevisUserPW = password;
+        if (connectToDB()) {
+            loginUser();//throw exeption is something is wrong 
+            return true;
+        } else {
+            throw new JEVisException("Error DataSource is not connected ", 2134);
+        }
     }
 
     protected Connection getConnection() throws JEVisException {
-        if (_connect == null) {
-            connect();
-            loginUser();
-        }
         return _connect;
     }
 
@@ -86,7 +94,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _user;
     }
 
-    public boolean connect() {
+    public boolean connectToDB() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
 //
@@ -100,12 +108,16 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             logger.info("Using Connection string: {}", conSring);
 
             _connect = DriverManager.getConnection(conSring);
+            if (_connect.isValid(2000)) {
+                return true;
+            } else {
+                return false;
+            }
 
 
-            return true;
 
         } catch (Exception ex) {
-            logger.error("Error while connecting to DB: {}", ex);
+            logger.error("Error while connecting to DB: {}", ex.getMessage());
             return false;
         }
     }

@@ -115,16 +115,16 @@ public class JEVisObjectSQL implements JEVisObject {
 
         //TODO: implement the cach again
         //disabled the cach will be slower but faster
-        _parentObjs = new LinkedList<JEVisObject>();
+
 
         if (_parentObjs == null) {
+            _parentObjs = new LinkedList<JEVisObject>();
             for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT)) {
                 //find the relationshipts where we are the child
                 if (rel.getStartObject().getID() == _id) {
                     if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getEndObject())) {
-                        _childrenObj.add(rel.getEndObject());
+                        _parentObjs.add(rel.getEndObject());
                     }
-
                 }
             }
         }
