@@ -360,7 +360,7 @@ public class JEVisObjectSQL implements JEVisObject {
         getChildren().add(newObj);
 
         List<JEVisClassRelationship> crels = getJEVisClass().getRelationships(
-                JEVisConstants.ClassRelationship.NESTEDT,
+                JEVisConstants.ClassRelationship.NESTED,
                 JEVisConstants.Direction.BACKWARD);
 
         for (JEVisClassRelationship crel : crels) {//TODo: test

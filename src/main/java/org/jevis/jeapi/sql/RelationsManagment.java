@@ -89,7 +89,7 @@ public class RelationsManagment {
      * @return
      */
     public static boolean canExcecude(JEVisObject user, JEVisObject object) throws JEVisException {
-        return checkMebershipForType(user, object, MEMBER_EXCECUTE);
+        return checkMebershipForType(user, object, MEMBER_EXECUTE);
     }
 
     /**
@@ -153,7 +153,7 @@ public class RelationsManagment {
             logger.debug("Checking relationship: {}->{} [{}]", r.getStartObject().getID(), r.getEndObject().getID(), r.getType());
             if (r.isType(MEMBER_READ)
                     || r.isType(MEMBER_WRITE)
-                    || r.isType(MEMBER_EXCECUTE)
+                    || r.isType(MEMBER_EXECUTE)
                     || r.isType(MEMBER_CREATE)
                     || r.isType(MEMBER_DELETE)) {
                 logger.debug("Found membership: {}", r);
@@ -191,7 +191,7 @@ public class RelationsManagment {
             return isNestedRelationship(parent, child.getInheritance());
         }
 
-        for (JEVisClassRelationship rel : parent.getRelationships(NESTEDT)) {
+        for (JEVisClassRelationship rel : parent.getRelationships(NESTED)) {
             if (rel.getOtherClass(parent).equals(child)) {
                 return true;
             }
