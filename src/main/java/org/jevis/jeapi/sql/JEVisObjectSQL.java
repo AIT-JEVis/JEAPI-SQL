@@ -39,9 +39,7 @@ import org.jevis.jeapi.JEVisType;
 import static org.jevis.jeapi.sql.ObjectTable.COLUMN_ID;
 import static org.jevis.jeapi.sql.ObjectTable.COLUMN_LINK;
 import static org.jevis.jeapi.sql.ObjectTable.COLUMN_NAME;
-import static org.jevis.jeapi.sql.ObjectTable.COLUMN_PARENT;
 import static org.jevis.jeapi.sql.ObjectTable.COLUMN_CLASS;
-import static org.jevis.jeapi.sql.ObjectTable.COLUMN_GROUP;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -258,9 +256,12 @@ public class JEVisObjectSQL implements JEVisObject {
         if (RelationsManagment.canDelete(_ds.getCurrentUser(), this)) {
             ObjectTable ot = new ObjectTable(_ds);
 
-            for (JEVisObject parent : getParents()) {
-                ((JEVisObjectSQL) parent).removeChild(this);
+            if (ot.deleteObject(this)) {
+                for (JEVisObject parent : getParents()) {
+                    ((JEVisObjectSQL) parent).removeChild(this);
+                }
             }
+
             return true;
 
         } else {
@@ -505,6 +506,7 @@ public class JEVisObjectSQL implements JEVisObject {
     @Override
     public List<JEVisRelationship> getRelationships() throws JEVisException {
         //ToDo: care for userrights
+
         return _relationships;
     }
 

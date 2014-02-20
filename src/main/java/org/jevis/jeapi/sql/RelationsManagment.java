@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * @author Florian Simon <florian.simon@envidatec.com>
  */
 public class RelationsManagment {
-
+    
     static Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
 
     /**
@@ -100,24 +100,27 @@ public class RelationsManagment {
      * @return
      */
     public static boolean checkMebershipForType(JEVisObject user, JEVisObject object, int type) throws JEVisException {
-//        List<JEVisRelationship> objMemberships = object.getr(object);
-        List<JEVisRelationship> userMemberships = getMembershipsRel(user);
-        logger.debug("Mebership size: object[{}] user[{}]", object.getRelationships().size(), userMemberships.size());
+        try {
+            List<JEVisRelationship> userMemberships = getMembershipsRel(user);
+            
+            for (JEVisRelationship or : object.getRelationships()) {
+                for (JEVisRelationship ur : userMemberships) {
+                    //is the Object Owner end the same as the user membership end
 
-        for (JEVisRelationship or : object.getRelationships()) {
-            for (JEVisRelationship ur : userMemberships) {
-                //is the Object Owner end the same as the user membership end
-                logger.debug("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
-                if (ur.getEndObject().getID() == or.getEndObject().getID()) {
-                    logger.debug("true");
-                    if (ur.isType(type)) {
-                        return true;
+                    logger.error("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
+                    if (ur.getEndObject().getID() == or.getEndObject().getID()) {
+                        logger.debug("true");
+                        if (ur.isType(type)) {
+                            return true;
+                        }
                     }
-
                 }
             }
+        } catch (NullPointerException ne) {
+            logger.error("Error while checking Memberships: {}", ne);
+            return false;
         }
-
+        
         return false;
     }
 
@@ -148,7 +151,7 @@ public class RelationsManagment {
         List<JEVisRelationship> memberships = new ArrayList<JEVisRelationship>();
         List<JEVisRelationship> objRel = object.getRelationships();
         logger.debug("Relationship totals: {}", objRel.size());
-
+        
         for (JEVisRelationship r : objRel) {
             logger.debug("Checking relationship: {}->{} [{}]", r.getStartObject().getID(), r.getEndObject().getID(), r.getType());
             if (r.isType(MEMBER_READ)
@@ -163,7 +166,7 @@ public class RelationsManagment {
         logger.debug("done searching");
         return memberships;
     }
-
+    
     public static boolean isSysAdmin(JEVisObject user) throws JEVisException {
         if (user.getJEVisClass().getName().equals(USER)) {
             JEVisAttribute sysAdmin = user.getAttribute(USER_SYS_ADMIN);
@@ -171,13 +174,13 @@ public class RelationsManagment {
         }
         return false;
     }
-
+    
     public static boolean isParentRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
-
+        
         if (child.getInheritance() != null) {
             return isParentRelationship(parent, child.getInheritance());
         }
-
+        
         for (JEVisClassRelationship rel : parent.getRelationships(OK_PARENT)) {
             if (rel.getOtherClass(parent).equals(child)) {
                 return true;
@@ -185,18 +188,18 @@ public class RelationsManagment {
         }
         return false;
     }
-
+    
     public static boolean isNestedRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
         if (child.getInheritance() != null) {
             return isNestedRelationship(parent, child.getInheritance());
         }
-
+        
         for (JEVisClassRelationship rel : parent.getRelationships(NESTED)) {
             if (rel.getOtherClass(parent).equals(child)) {
                 return true;
             }
         }
-
+        
         return false;
     }
 }

@@ -51,7 +51,7 @@ public class ObjectTable {
     public final static String COLUMN_ID = "id";
     public final static String COLUMN_NAME = "name";
     public final static String COLUMN_CLASS = "type";
-    public final static String COLUMN_PARENT = "parent";
+//    public final static String COLUMN_PARENT = "parent";
     public final static String COLUMN_LINK = "link";
     public final static String COLUMN_DELETE = "deletets";
     public final static String COLUMN_GROUP = "groupid";//remove ID from name
@@ -287,8 +287,8 @@ public class ObjectTable {
 
     public JEVisObject insertLink(String name, JEVisObject linkParent, JEVisObject linkedObject) throws JEVisException {
         String sql = "insert into " + TABLE
-                + "(" + COLUMN_NAME + "," + COLUMN_PARENT + "," + COLUMN_GROUP + "," + COLUMN_LINK + "," + COLUMN_CLASS + ")"
-                + " values(?,?,?,?,?)";
+                + "(" + COLUMN_NAME + "," + COLUMN_GROUP + "," + COLUMN_LINK + "," + COLUMN_CLASS + ")"
+                + " values(?,?,?,?)";
         JEVisObject newObject = null;
         _ds.addQuery();
 
@@ -296,10 +296,9 @@ public class ObjectTable {
             PreparedStatement ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 //            PreparedStatement ps = _connection.prepareStatement(sql);
             ps.setString(1, name);
-            ps.setLong(2, linkParent.getID());
-            ps.setLong(3, 0);//TODO replace this is not needet anymore
-            ps.setLong(4, linkedObject.getID());
-            ps.setString(5, "Link");
+            ps.setLong(2, 0);//TODO replace this is not needet anymore
+            ps.setLong(3, linkedObject.getID());
+            ps.setString(4, "Link");
 
 //            System.out.println("putObjectLink.sql: " + ps);
 
@@ -384,57 +383,56 @@ public class ObjectTable {
         return object;
     }
 
-    public List<JEVisObject> getChildren(JEVisObject obj) throws JEVisException {
-        ResultSet rs = null;
-        List<JEVisObject> children = new ArrayList<JEVisObject>();
-        _ds.addQuery();
-
-        String sql = "select o.*"
-                + ",r.*"
-                + " from " + TABLE + " o"
-                + " left join " + RelationshipTable.TABLE + " r"
-                + " on o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_START
-                + " or o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_END
-                + " where  o." + COLUMN_PARENT + "=?"
-                + " and o." + COLUMN_DELETE + " is null";
-
-        try {
-            PreparedStatement ps = _connection.prepareStatement(sql);
-            ps.setLong(1, obj.getID());
-
-
-//        System.out.println("getObject.sql: "+ps);
-            rs = ps.executeQuery();
-
-            Map<Long, JEVisObjectSQL> _tmp = new HashMap<Long, JEVisObjectSQL>();
-
-            while (rs.next()) {
-                long id = rs.getLong(COLUMN_ID);
-                if (!_tmp.containsKey(id)) {
-                    _tmp.put(id, new JEVisObjectSQL(_ds, rs));
-                }
-                _tmp.get(id).addRelationship(new JEVisRelationshipSQL(_ds, rs));
-
-            }
-            children = new LinkedList<JEVisObject>(_tmp.values());
-
-        } catch (SQLException ex) {
-            throw new JEVisException("Error while select Child objects", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException ex) {
-                    logger.debug("Error while closing DB connection: {}. ", ex);
-                }
-            }
-
-        }
-
-
-        return children;
-    }
-
+//    public List<JEVisObject> getChildren(JEVisObject obj) throws JEVisException {
+//        ResultSet rs = null;
+//        List<JEVisObject> children = new ArrayList<JEVisObject>();
+//        _ds.addQuery();
+//
+//        String sql = "select o.*"
+//                + ",r.*"
+//                + " from " + TABLE + " o"
+//                + " left join " + RelationshipTable.TABLE + " r"
+//                + " on o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_START
+//                + " or o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_END
+//                + " where  o." + COLUMN_PARENT + "=?"
+//                + " and o." + COLUMN_DELETE + " is null";
+//
+//        try {
+//            PreparedStatement ps = _connection.prepareStatement(sql);
+//            ps.setLong(1, obj.getID());
+//
+//
+////        System.out.println("getObject.sql: "+ps);
+//            rs = ps.executeQuery();
+//
+//            Map<Long, JEVisObjectSQL> _tmp = new HashMap<Long, JEVisObjectSQL>();
+//
+//            while (rs.next()) {
+//                long id = rs.getLong(COLUMN_ID);
+//                if (!_tmp.containsKey(id)) {
+//                    _tmp.put(id, new JEVisObjectSQL(_ds, rs));
+//                }
+//                _tmp.get(id).addRelationship(new JEVisRelationshipSQL(_ds, rs));
+//
+//            }
+//            children = new LinkedList<JEVisObject>(_tmp.values());
+//
+//        } catch (SQLException ex) {
+//            throw new JEVisException("Error while select Child objects", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
+//        } finally {
+//            if (rs != null) {
+//                try {
+//                    rs.close();
+//                } catch (SQLException ex) {
+//                    logger.debug("Error while closing DB connection: {}. ", ex);
+//                }
+//            }
+//
+//        }
+//
+//
+//        return children;
+//    }
     private void findChildren(List<Long> children, Map<Long, Long> allID, Long parent) {
         for (Map.Entry<Long, Long> entry : allID.entrySet()) {
 //            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
@@ -449,49 +447,62 @@ public class ObjectTable {
     }
 
     //TODO make a fast version , myabe travel the tree...hmm mybe not
-    private List<Long> getAllChildren(long id) throws JEVisException {
-        String sql = "select " + COLUMN_ID + "," + COLUMN_PARENT + " from " + TABLE;
-
-        PreparedStatement ps = null;
-        ResultSet rs = null;
-        Map<Long, Long> allID = new HashMap<Long, Long>();
-        List<Long> children = new ArrayList<Long>();
-
+//    private List<Long> getAllChildren(long id) throws JEVisException {
+//        String sql = "select " + COLUMN_ID + "," + COLUMN_PARENT + " from " + TABLE;
+//
+//        PreparedStatement ps = null;
+//        ResultSet rs = null;
+//        Map<Long, Long> allID = new HashMap<Long, Long>();
+//        List<Long> children = new ArrayList<Long>();
+//
+//        try {
+//            ps = _connection.prepareStatement(sql);
+//
+//            rs = ps.executeQuery();
+//
+//
+//            while (rs.next()) {
+//
+//                //------------ Parent gibt es nicht mehr -----------------
+////                System.out.println("add to map: ID:"+rs.getLong(COLUMN_ID)+"  Parent:"+rs.getLong(COLUMN_PARENT));
+//
+//                allID.put(rs.getLong(COLUMN_ID), rs.getLong(COLUMN_PARENT));
+//
+//            }
+//
+//            findChildren(children, allID, id);
+//            return children;
+//
+//
+//        } catch (Exception ex) {
+//            ex.printStackTrace();
+//            //TODO error handling
+//            return children;
+//        } finally {
+//            if (rs != null) {
+//                try {
+//                    rs.close();
+//                } catch (SQLException e) { /*ignored*/ }
+//            }
+//            if (ps != null) {
+//                try {
+//                    ps.close();
+//                } catch (SQLException e) { /*ignored*/ }
+//            }
+//        }
+//    }
+    public List<JEVisObject> getAllChildren(List<JEVisObject> objs, JEVisObject obj) {
         try {
-            ps = _connection.prepareStatement(sql);
-
-            rs = ps.executeQuery();
-
-
-            while (rs.next()) {
-//                System.out.println("add to map: ID:"+rs.getLong(COLUMN_ID)+"  Parent:"+rs.getLong(COLUMN_PARENT));
-                allID.put(rs.getLong(COLUMN_ID), rs.getLong(COLUMN_PARENT));
-
+            for (JEVisObject ch : obj.getChildren()) {
+                objs.add(ch);
+                getAllChildren(objs, ch);
             }
-
-            findChildren(children, allID, id);
-            return children;
-
-
         } catch (Exception ex) {
-            ex.printStackTrace();
-            //TODO error handling
-            return children;
-        } finally {
-            if (rs != null) {
-                try {
-                    rs.close();
-                } catch (SQLException e) { /*ignored*/ }
-            }
-            if (ps != null) {
-                try {
-                    ps.close();
-                } catch (SQLException e) { /*ignored*/ }
-            }
         }
+        return objs;
     }
 
-    public boolean deleteObject(long id) throws JEVisException {
+    public boolean deleteObject(JEVisObject obj) throws JEVisException {
         String sql = "update " + TABLE
                 + " set " + COLUMN_DELETE + "=?"
                 + " where " + COLUMN_ID + " IN(?";
@@ -499,29 +510,39 @@ public class ObjectTable {
         _ds.addQuery();
 
         try {
-//            System.out.println("find children to delete");
-            List<Long> children = getAllChildren(id);
 
-            //TODO use string builder
-            for (Long cid : children) {
+            List<JEVisObject> children = getAllChildren(new ArrayList<JEVisObject>(), obj);
+            children.add(obj);
+
+            for (JEVisObject ch : children) {
                 sql += ",?";
             }
             sql += ")";
+
+
+
             Calendar now = new GregorianCalendar();
 
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setTimestamp(1, new Timestamp(now.getTimeInMillis()));
-            ps.setLong(2, id);
+            ps.setLong(2, obj.getID());
+
+
             for (int i = 0; i < children.size(); i++) {
-                ps.setLong(i + 3, children.get(i));
+                JEVisObject ch = children.get(i);
+                ps.setLong(i + 3, children.get(i).getID());
             }
 
             int count = ps.executeUpdate();
 
             if (count > 0) {
-                _cach.remove(id);
+                List<Long> ids = new LinkedList<Long>();
+                for (JEVisObject ch : children) {
+                    _cach.remove(ch.getID());
+                    ids.add(ch.getID());
+                }
 
-                _ds.getRelationshipTable().deleteAll(id);
+                _ds.getRelationshipTable().deleteAll(ids);
 
                 return true;
             } else {

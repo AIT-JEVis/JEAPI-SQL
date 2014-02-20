@@ -232,7 +232,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         try {
             JEVisObject obj = getObject(id);
             if (RelationsManagment.canDelete(_user, obj)) {
-                getObjectTable().deleteObject(id);
+                getObjectTable().deleteObject(obj);
 
             } else {
                 throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
