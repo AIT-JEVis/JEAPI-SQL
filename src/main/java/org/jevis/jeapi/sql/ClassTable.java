@@ -16,21 +16,26 @@
  */
 package org.jevis.jeapi.sql;
 
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.sql.Types;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisExceptionCodes;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -175,38 +180,57 @@ public class ClassTable {
 
         try {
             String sql = "update " + TABLE
-                    + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?"
-                    + " where " + COLUMN_NAME + "=?";
+                    + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?";// + COLUMN_ICON + "=?"
+
+            if (((JEVisClassSQL) jclass).getFile() != null) {
+                sql += ", " + COLUMN_ICON + "=?";
+            }
+            sql += " where " + COLUMN_NAME + "=?";
 
             _ds.addQuery();
             PreparedStatement ps = _connection.prepareStatement(sql);
 
+            int i = 1;
 
-            if (!oldName.equals(jclass.getName())) { // ->rename
+//            if (!oldName.equals(jclass.getName())) { // ->rename
 //                System.out.println("rename");
-                ps.setString(1, jclass.getDescription());
-                ps.setString(2, jclass.getName());
-                ps.setBoolean(3, jclass.isUnique());
-                ps.setString(4, oldName);
-            } else {//update with same name
-//                System.out.println("update");
-                if (jclass.getDescription() != null) {
-                    ps.setString(1, jclass.getDescription());
-                } else {
-                    ps.setNull(1, Types.VARCHAR);
-                }
+            ps.setString(i++, jclass.getDescription());
+            ps.setString(i++, jclass.getName());
+            ps.setBoolean(i++, jclass.isUnique());
 
-                ps.setString(2, jclass.getName());
-                if (jclass.getInheritance() != null && jclass.getInheritance().getName() != null) {
-                    ps.setString(3, jclass.getInheritance().getName());
-                } else {
-                    ps.setNull(3, Types.VARCHAR);
-                }
 
-                //TODO hier warst du, lösche classe vor test (unique=keyword?)
-                ps.setBoolean(4, jclass.isUnique());
-                ps.setString(5, jclass.getName());
+            if (((JEVisClassSQL) jclass).getFile() != null) {
+                File file = ((JEVisClassSQL) jclass).getFile();
+                FileInputStream fis = new FileInputStream(file);
+                ps.setBinaryStream(i++, fis, (int) file.length());
             }
+
+
+            ps.setString(i++, oldName);
+
+//            } else {//update with same name
+////                System.out.println("update");
+//                if (jclass.getDescription() != null) {
+//                    ps.setString(1, jclass.getDescription());
+//                } else {
+//                    ps.setNull(1, Types.VARCHAR);
+//                }
+//
+//                ps.setString(2, jclass.getName());
+//
+////                if (jclass.getInheritance() != null && jclass.getInheritance().getName() != null) {
+////                    ps.setString(3, jclass.getInheritance().getName());
+////                } else {
+////                    ps.setNull(3, Types.VARCHAR);
+////                }
+//
+//                //TODO hier warst du, lösche classe vor test (unique=keyword?)
+//                ps.setBoolean(3, jclass.isUnique());
+//
+//
+//
+//                ps.setString(4, jclass.getName());
+//            }
 
             System.out.println("sql: " + ps);
 
@@ -262,6 +286,28 @@ public class ClassTable {
 
 
         return false;
+    }
+
+    private static java.awt.image.BufferedImage convertToBufferedImage(ImageIcon icon) {
+        java.awt.image.BufferedImage bi = new java.awt.image.BufferedImage(
+                icon.getIconWidth(),
+                icon.getIconHeight(),
+                BufferedImage.TYPE_INT_RGB);
+        Graphics g = bi.createGraphics();
+        // paint the Icon to the BufferedImage.
+        icon.paintIcon(null, g, 0, 0);
+        g.dispose();
+        return bi;
+
+    }
+
+    private byte[] getIconBytes(ImageIcon icon) throws Exception {
+        BufferedImage img = convertToBufferedImage(icon);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream(1000);
+        ImageIO.write(img, "jpg", baos);
+        baos.flush();
+
+        return baos.toByteArray();
     }
 
     public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
