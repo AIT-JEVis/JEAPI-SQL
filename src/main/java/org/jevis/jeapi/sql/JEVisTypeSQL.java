@@ -43,7 +43,7 @@ public class JEVisTypeSQL implements JEVisType {
     private JEVisUnit _junit;
     private int _guiWeight;
     private int _premitivType;
-    private String _validity;
+    private int _validity;
     private String _description;
     private String _oldName;
     private boolean _hasChanged = false;
@@ -59,7 +59,7 @@ public class JEVisTypeSQL implements JEVisType {
             _guiWeight = rs.getInt(TypeTable.COLUMN_GUI_WEIGHT);
 //            _premitivType = rs.getString(TypeTable.COLUMN_PRIMITIV_TYPE);
             _premitivType = rs.getInt(TypeTable.COLUMN_PRIMITIV_TYPE);
-            _validity = rs.getString(TypeTable.COLUMN_VALIDITY);
+            _validity = rs.getInt(TypeTable.COLUMN_VALIDITY);
 
             _description = rs.getString(TypeTable.COLUMN_DESCRIPTION);
             cValue = rs.getString(TypeTable.COLUMN_VALUE);
@@ -71,16 +71,19 @@ public class JEVisTypeSQL implements JEVisType {
         }
     }
 
+    @Override
     public String getName() {
         return _name;
     }
 
+    @Override
     public void setName(String name) {
         _hasChanged = true;
         _oldName = _name;
         _name = name;
     }
 
+    @Override
     public int getPrimitiveType() {
         return _premitivType;
 //        try {
@@ -98,37 +101,45 @@ public class JEVisTypeSQL implements JEVisType {
 //        return String.class;// String is the fallback
     }
 
+    @Override
     public void setPrimitiveType(int type) {
         _hasChanged = true;
         _premitivType = type;
     }
 
+    @Override
     public String getGUIDisplayType() {
         return _guiType;
     }
 
+    @Override
     public void setGUIDisplayType(String type) {
         _hasChanged = true;
         _guiType = type;
     }
 
+    @Override
     public int getGUIPosition() {
         return _guiWeight;
     }
 
+    @Override
     public void setGUIPosition(int pos) {
         _hasChanged = true;
         _guiWeight = pos;
     }
 
+    @Override
     public JEVisClass getJEVisClass() {
         return _class;
     }
 
-    public String getValidity() {
+    @Override
+    public int getValidity() {
         return _validity;
     }
 
+    @Override
     public boolean delete() throws JEVisException {
         //TODO how to handel the userrigths for Classes and types?
         if (RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
@@ -142,6 +153,7 @@ public class JEVisTypeSQL implements JEVisType {
 
     }
 
+    @Override
     public JEVisDataSource getDataSource() throws JEVisException {
         return _ds;
     }
@@ -151,7 +163,7 @@ public class JEVisTypeSQL implements JEVisType {
         return getName();
     }
 
-    public void setValidity(String validity) {
+    public void setValidity(int validity) {
         _hasChanged = true;
         _validity = validity;
     }
@@ -182,10 +194,12 @@ public class JEVisTypeSQL implements JEVisType {
         return true;
     }
 
+    @Override
     public String getDescription() {
         return _description;
     }
 
+    @Override
     public void setDescription(String description) {
         _hasChanged = true;
         _description = description;
@@ -202,6 +216,7 @@ public class JEVisTypeSQL implements JEVisType {
         return "JEVisTypeSQL{" + "name=" + _name + ", guiType=" + _guiType + ", class=" + className + ", unit=" + _unit + ", guiWeight=" + _guiWeight + ", premitivType=" + _premitivType + ", validity=" + _validity + '}';
     }
 
+    @Override
     public void commit() throws JEVisException {
         if (!_hasChanged) {
             System.out.println("No changes, Abort");
@@ -221,6 +236,7 @@ public class JEVisTypeSQL implements JEVisType {
 
     }
 
+    @Override
     public void rollBack() {
 //        _hasChanged=false;
         //TODO: implement rollBack
@@ -228,15 +244,18 @@ public class JEVisTypeSQL implements JEVisType {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
     public boolean hasChanged() {
         return _hasChanged;
 
     }
 
+    @Override
     public JEVisUnit getDefaultUnit() {
         return _junit;
     }
 
+    @Override
     public void setDefaultUnit(JEVisUnit unit) {
         _hasChanged = true;
         _junit = unit;
