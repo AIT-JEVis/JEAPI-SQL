@@ -76,6 +76,8 @@ public class JEVisSampleSQL implements JEVisSample {
 //                System.out.println("sample is a Double");
             } else if (value instanceof Integer) {
 //                System.out.println("sample is a Integer");
+            } else if (value instanceof Boolean) {
+//                System.out.println("sample is a Integer");            
             } else if (value instanceof File) {
 //                System.out.println("sample is a file");
                 _file = new JEVisFileSQL(this);
@@ -112,7 +114,11 @@ public class JEVisSampleSQL implements JEVisSample {
 
 //            _jManIP = new JEVisManipulationSQL(_manip);
 
-            _tvalue = rs.getString(SampleTable.COLUMN_VALUE);
+            if (att.getPrimitiveType() == JEVisConstants.PrimitiveType.BOOLEAN) {
+                _tvalue = rs.getBoolean(SampleTable.COLUMN_VALUE);
+            } else {
+                _tvalue = rs.getString(SampleTable.COLUMN_VALUE);
+            }
 
             if (rs.getBytes(SampleTable.COLUMN_FILE) != null) {
                 _fileBytes = rs.getBytes(SampleTable.COLUMN_FILE);
@@ -199,14 +205,22 @@ public class JEVisSampleSQL implements JEVisSample {
     public Boolean getValueAsBoolean() {
         try {
             if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.BOOLEAN) {
-                logger.warn("Error the primitive type of this Type is not Boolean");
+                logger.warn("Waring the primitive type of this Type is not Boolean");
                 return null;
             }
-            if (((String) _tvalue).equals("1")) {
-                return true;
+
+            //DOTO: the DB give a string ? 
+            if (_tvalue instanceof String) {
+                if (((String) _tvalue).equals("1")) {
+                    return true;
+                } else {
+                    return false;
+                }
             } else {
-                return false;
+                return (Boolean) _tvalue;
             }
+
+
 
         } catch (Exception ex) {
             ex.printStackTrace();
