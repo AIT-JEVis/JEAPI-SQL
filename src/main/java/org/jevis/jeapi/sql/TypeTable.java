@@ -27,11 +27,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisObject;
-import org.jevis.jeapi.JEVisSample;
 import org.jevis.jeapi.JEVisType;
 
 /**
@@ -51,7 +48,6 @@ public class TypeTable {
     public final static String COLUMN_DESCRIPTION = "description";
     public final static String COLUMN_VALIDITY = "validity";
     public final static String COLUMN_VALUE = "value";
-    
     private JEVisDataSourceSQL _ds;
     private Connection _connection;
 
@@ -67,8 +63,8 @@ public class TypeTable {
                     + COLUMN_CLASS + "=?," + COLUMN_DISPLAY_TYPE + "=?,"
                     + COLUMN_PRIMITIV_TYPE + "=?," + COLUMN_DEFAULT_UNIT + "=?,"
                     + COLUMN_GUI_WEIGHT + "=?," + COLUMN_VALIDITY + "=?,"
-                    + COLUMN_VALUE+"=?"
-                    + " where " + COLUMN_NAME + "=? and "+COLUMN_CLASS+"=?";
+                    + COLUMN_VALUE + "=?"
+                    + " where " + COLUMN_NAME + "=? and " + COLUMN_CLASS + "=?";
 
 
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -83,8 +79,8 @@ public class TypeTable {
             ps.setString(6, type.getDefaultUnit().getName());
 
             ps.setInt(7, type.getGUIPosition());
-            ps.setString(8, type.getValidity());
-            
+            ps.setInt(8, type.getValidity());
+
             ps.setString(9, type.getConfigurationValue());
 
             ps.setString(10, originalName);
@@ -99,13 +95,13 @@ public class TypeTable {
             if (res == 1) {
                 if (!type.equals(originalName)) {
                     //------------------ Update exintings Attributes
-                    
-                    String updateObject = "update " + AttributeTable.TABLE+","+ObjectTable.TABLE
-                            + " set " +AttributeTable.TABLE+"."+AttributeTable.COLUMN_NAME + "=?"
-                            + " where "+ AttributeTable.TABLE+"."+AttributeTable.COLUMN_NAME+"=?"
-                            + " and "+AttributeTable.TABLE+"."+AttributeTable.COLUMN_OBJECT + "=" + ObjectTable.TABLE+"."+ObjectTable.COLUMN_ID
-                            + " and "+ObjectTable.TABLE+"."+ObjectTable.COLUMN_CLASS+"=?";
-                    
+
+                    String updateObject = "update " + AttributeTable.TABLE + "," + ObjectTable.TABLE
+                            + " set " + AttributeTable.TABLE + "." + AttributeTable.COLUMN_NAME + "=?"
+                            + " where " + AttributeTable.TABLE + "." + AttributeTable.COLUMN_NAME + "=?"
+                            + " and " + AttributeTable.TABLE + "." + AttributeTable.COLUMN_OBJECT + "=" + ObjectTable.TABLE + "." + ObjectTable.COLUMN_ID
+                            + " and " + ObjectTable.TABLE + "." + ObjectTable.COLUMN_CLASS + "=?";
+
                     PreparedStatement ps2 = _connection.prepareStatement(updateObject);
                     ps2.setString(1, type.getName());
                     ps2.setString(2, originalName);
@@ -130,29 +126,29 @@ public class TypeTable {
         return false;
 
     }
-    
-    public boolean detele(JEVisType type){
+
+    public boolean detele(JEVisType type) {
         String sql = "delete from " + TABLE
-                + " where "+COLUMN_CLASS+"=?"
-                + " and "+COLUMN_NAME+"=?";
+                + " where " + COLUMN_CLASS + "=?"
+                + " and " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
-        
-        try{        
+
+        try {
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, type.getJEVisClass().getName());
-            ps.setString(2, type.getName());   
-            
-            if(ps.executeUpdate()==1){
+            ps.setString(2, type.getName());
+
+            if (ps.executeUpdate() == 1) {
                 return true;
-            }else{
+            } else {
                 return false;
             }
-        
-        }catch(Exception ex){
+
+        } catch (Exception ex) {
             ex.printStackTrace();
             //TODO throw JEVisExeption?!
             return false;
-        }finally {
+        } finally {
             if (ps != null) {
                 try {
                     ps.close();
@@ -160,7 +156,6 @@ public class TypeTable {
             }
         }
     }
-    
 
     public boolean insert(JEVisClass jclass, String newType) {
         try {
