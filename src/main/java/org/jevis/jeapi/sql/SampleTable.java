@@ -181,7 +181,7 @@ public class SampleTable {
                     ps.setNull(++p, Types.VARCHAR);
                 }
             }
-//            System.out.println("SamplDB.putSample SQL: \n" + ps);
+            //System.out.println("SamplDB.putSample SQL: \n" + ps);
 
 
             count = ps.executeUpdate();
