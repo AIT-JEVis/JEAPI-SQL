@@ -546,4 +546,17 @@ public class JEVisObjectSQL implements JEVisObject {
     public int compareTo(JEVisObject o) {
         return getName().compareTo(o.getName());
     }
+
+    @Override
+    public List<JEVisClass> getAllowedChildrenClasses() throws JEVisException {
+        List<JEVisClassRelationship> rels = getJEVisClass().getRelationships(
+                JEVisConstants.ClassRelationship.OK_PARENT,
+                JEVisConstants.Direction.BACKWARD);
+        List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
+        for (JEVisClassRelationship rel : rels) {
+            okClasses.add(rel.getOtherClass(getJEVisClass()));
+        }
+
+        return okClasses;
+    }
 }
