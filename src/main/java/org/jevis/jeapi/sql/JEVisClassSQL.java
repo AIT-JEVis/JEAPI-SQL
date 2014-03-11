@@ -21,6 +21,7 @@ package org.jevis.jeapi.sql;
 
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.File;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,6 +59,13 @@ public class JEVisClassSQL implements JEVisClass {
     private boolean _unique;
     private JEVisClass _inheritance = null;
     private Logger logger = LoggerFactory.getLogger(JEVisClassSQL.class);
+    private File _iconFile;
+
+    public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
+        _ds = ds;
+        _name = name;
+        isLoaded = false;
+    }
 
     public JEVisClassSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         _ds = ds;
@@ -90,10 +98,14 @@ public class JEVisClassSQL implements JEVisClass {
 
     }
 
-    public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
-        _ds = ds;
-        _name = name;
-        isLoaded = false;
+    @Override
+    public void setIcon(File icon) throws JEVisException {
+        _iconFile = icon;
+        _hasChanged = true;
+    }
+
+    protected File getFile() {
+        return _iconFile;
     }
 
     @Override
@@ -108,7 +120,14 @@ public class JEVisClassSQL implements JEVisClass {
         _hasChanged = true;
     }
 
+    private void load() {
+        if (!isLoaded) {
+            rollBack();
+        }
+    }
+
     public ImageIcon getIcon() {
+        load();
         return _icon;
     }
 
@@ -349,7 +368,6 @@ public class JEVisClassSQL implements JEVisClass {
             heirs.add(cr.getStart());
             heirs.addAll(cr.getStart().getHeirs());
         }
-
         return heirs;
     }
 
