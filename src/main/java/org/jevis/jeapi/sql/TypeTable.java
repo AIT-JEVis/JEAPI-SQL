@@ -134,13 +134,17 @@ public class TypeTable {
         PreparedStatement ps = null;
 
         try {
-            ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            ps = _connection.prepareStatement(sql);
             ps.setString(1, type.getJEVisClass().getName());
             ps.setString(2, type.getName());
 
+            System.out.println("Delete Type: " + type);
+
             if (ps.executeUpdate() == 1) {
+                System.out.println("true");
                 return true;
             } else {
+                System.out.println("false");
                 return false;
             }
 

@@ -141,9 +141,18 @@ public class ClassRelationTable {
      */
     public List<JEVisClassRelationship> get(JEVisClass jclass) throws JEVisException {
         List<JEVisClassRelationship> relations = new ArrayList<JEVisClassRelationship>();
-        String sql = "select * from " + TABLE
-                + " where " + COLUMN_START + "=?"
-                + " or " + COLUMN_END + "=?";
+//        String sql = "select * from " + TABLE
+//                + " where " + COLUMN_START + "=?"
+//                + " or " + COLUMN_END + "=?";       
+
+        //saver this will exclude not existion classes
+        String sql = "select distinct " + TABLE + ".* from " + TABLE
+                + " left join " + ClassTable.TABLE + " c1 on " + TABLE + "." + COLUMN_START + "=c1." + ClassTable.COLUMN_NAME
+                + " left join " + ClassTable.TABLE + " c2 on " + TABLE + "." + COLUMN_END + "=c2." + ClassTable.COLUMN_NAME
+                + " where (" + COLUMN_START + "=?" + " or " + COLUMN_END + "=? )"
+                + " and c1." + ClassTable.COLUMN_NAME + " is not null "
+                + " and c2." + ClassTable.COLUMN_NAME + " is not null ";
+
 
         _ds.addQuery();
         PreparedStatement ps = null;
@@ -154,14 +163,15 @@ public class ClassRelationTable {
             ps.setString(1, jclass.getName());
             ps.setString(2, jclass.getName());
 
+            System.out.println("CR.sql: " + ps);
             ResultSet rs = ps.executeQuery();
+
 
             while (rs.next()) {
                 relations.add(new JEVisClassRelationshipSQL(_ds, rs));
             }
 
         } catch (Exception ex) {
-            ex.printStackTrace();
             throw new JEVisException("Error while fetching ClassRelationship", 7390562, ex);
         } finally {
             if (ps != null) {

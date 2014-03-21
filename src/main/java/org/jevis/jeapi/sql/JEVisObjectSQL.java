@@ -188,38 +188,61 @@ public class JEVisObjectSQL implements JEVisObject {
             return _linkedObject.getAttributes();
         }
 
-
         //Check if attributes are loaded
         //Workaround disable  this simple cach TODO:reimplement
         if (_attributes == null) {
-            if (true) {
-                AttributeTable adb = new AttributeTable(_ds);
-                _attributes = adb.getAttributes(this);
-            }
+            _attributes = new LinkedList<JEVisAttribute>();
+            AttributeTable adb = _ds.getAttributeTable();
+            List<JEVisAttribute> tmpAttributes = adb.getAttributes(this);
 
-
-            //allow vaild types, add missing
+            //allow onl y vaild types, add missing
             for (JEVisType type : getJEVisClass().getTypes()) {
                 boolean isThere = false;
-                for (JEVisAttribute att : _attributes) {
+                for (JEVisAttribute att : tmpAttributes) {
                     if (att.isType(type)) {
                         isThere = true;
+                        _attributes.add(att);
                         break;
                     }
                 }
                 if (!isThere) {
-                    //                System.out.println("add missing attribute: " + type.getName() + " in " + getID());
                     //TODO add commit to DB?
-                    AttributeTable adb = new AttributeTable(_ds);
                     adb.insert(type, this);
                     _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
 
                 }
-
             }
             Collections.sort(_attributes);
-
         }
+
+
+//        //Check if attributes are loaded
+//        //Workaround disable  this simple cach TODO:reimplement
+//        if (_attributes == null) {
+//            if (true) {
+//                AttributeTable adb = new AttributeTable(_ds);
+//                _attributes = adb.getAttributes(this);
+//            }
+//
+//            //allow onl y vaild types, add missing
+//            for (JEVisType type : getJEVisClass().getTypes()) {
+//                boolean isThere = false;
+//                for (JEVisAttribute att : _attributes) {
+//                    if (att.isType(type)) {
+//                        isThere = true;
+//                        break;
+//                    }
+//                }
+//                if (!isThere) {
+//                    //TODO add commit to DB?
+//                    AttributeTable adb = new AttributeTable(_ds);
+//                    adb.insert(type, this);
+//                    _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
+//
+//                }
+//            }
+//            Collections.sort(_attributes);
+//        }
 
 
         return _attributes;

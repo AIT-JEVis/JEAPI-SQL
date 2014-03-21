@@ -78,6 +78,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         _jevisUsername = username;
         _jevisUserPW = password;
         if (connectToDB()) {
+            System.out.println("DB connection is OK login user");
             loginUser();//throw exeption is something is wrong 
             return true;
         } else {

@@ -365,8 +365,12 @@ public class JEVisClassSQL implements JEVisClass {
     public List<JEVisClass> getHeirs() throws JEVisException {
         List<JEVisClass> heirs = new LinkedList<JEVisClass>();
         for (JEVisClassRelationship cr : getRelationships(ClassRelationship.INHERIT, Direction.BACKWARD)) {
-            heirs.add(cr.getStart());
-            heirs.addAll(cr.getStart().getHeirs());
+            try {
+                heirs.add(cr.getStart());
+                heirs.addAll(cr.getStart().getHeirs());
+            } catch (Exception ex) {
+                logger.warn("There is a problem with the Heir of {}", getName());
+            }
         }
         return heirs;
     }
@@ -386,8 +390,13 @@ public class JEVisClassSQL implements JEVisClass {
             _relations = _ds.getClassRelationshipTable().get(this);
 
             for (JEVisClassRelationship crel : _relations) {
-                if (crel.isType(ClassRelationship.INHERIT) && crel.getStart().getName().equals(_name)) {
-                    _inheritance = crel.getEnd();
+                try {
+                    if (crel.isType(ClassRelationship.INHERIT) && crel.getStart().getName().equals(_name)) {
+                        _inheritance = crel.getEnd();
+                    }
+                } catch (Exception ex) {
+                    logger.info("There is a problem with an ClassRelationship for {}", this.getName());
+//                    ex.printStackTrace();
                 }
             }
 
