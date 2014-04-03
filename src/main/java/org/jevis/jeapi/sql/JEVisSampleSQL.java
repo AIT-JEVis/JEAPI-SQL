@@ -27,6 +27,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
+import javax.measure.converter.UnitConverter;
 import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
@@ -36,6 +37,7 @@ import org.jevis.jeapi.JEVisFile;
 import org.jevis.jeapi.JEVisSelection;
 import org.jevis.jeapi.JEVisMultiSelection;
 import org.jevis.jeapi.JEVisSample;
+import org.jevis.jeapi.JEVisUnit;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,7 +181,45 @@ public class JEVisSampleSQL implements JEVisSample {
 
         } catch (Exception ex) {
             ex.printStackTrace();
-            return -1l;
+//            return -1l;
+            throw new NumberFormatException();
+        }
+    }
+
+    @Override
+    public Long getValueAsLong(JEVisUnit unit) {
+        Number convNumber = getOutputUnitConverter(unit).convert(getValueAsLong());
+        return convNumber.longValue();
+
+    }
+
+    @Override
+    public Double getValueAsDouble(JEVisUnit unit) {
+        Double value = getValueAsDouble();
+        return getOutputUnitConverter(unit).convert(value);
+    }
+
+    private UnitConverter getOutputUnitConverter(JEVisUnit unit) {
+        if (getAttribute().getUnit().isCompatible(unit)) {
+            JEVisUnitSQL defautlUnit = (JEVisUnitSQL) getAttribute().getUnit();//not so pritty and save but fast
+            JEVisUnitSQL targetlUnit = (JEVisUnitSQL) unit;//not so pritty and save but fast
+
+            return defautlUnit.getUnit().getConverterTo(targetlUnit.getUnit());
+        } else {
+            return null;
+            //TODO throw better exeption
+        }
+    }
+
+    private UnitConverter getInputUnitConverter(JEVisUnit unit) {
+        if (getAttribute().getUnit().isCompatible(unit)) {
+            JEVisUnitSQL defautlUnit = (JEVisUnitSQL) getAttribute().getUnit();//not so pritty and save but fast
+            JEVisUnitSQL targetlUnit = (JEVisUnitSQL) unit;//not so pritty and save but fast
+
+            return targetlUnit.getUnit().getConverterTo(defautlUnit.getUnit());
+        } else {
+            return null;
+            //TODO throw better exeption
         }
     }
 
@@ -316,6 +356,21 @@ public class JEVisSampleSQL implements JEVisSample {
     public void setValue(Object value) throws ClassCastException {
         _tvalue = value;
         _hasChanged = true;
+    }
+
+    @Override
+    public void setValue(Object value, JEVisUnit unit) throws JEVisException {
+        if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.DOUBLE) {
+            _tvalue = getInputUnitConverter(unit).convert((Double) value);
+        } else if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.LONG) {
+            Number tmp = getInputUnitConverter(unit).convert((Long) value);
+            _tvalue = tmp.longValue();
+        } else {
+            _tvalue = value;
+            logger.warn("Error the primitive type of this Type is not MultiSelection ");
+        }
+        _hasChanged = true;
+
     }
 
     @Override

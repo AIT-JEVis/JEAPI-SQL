@@ -163,7 +163,7 @@ public class ClassRelationTable {
             ps.setString(1, jclass.getName());
             ps.setString(2, jclass.getName());
 
-            System.out.println("CR.sql: " + ps);
+//            System.out.println("CR.sql: " + ps);
             ResultSet rs = ps.executeQuery();
 
 

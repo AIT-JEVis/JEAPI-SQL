@@ -76,7 +76,7 @@ public class TypeTable {
             ps.setString(4, type.getGUIDisplayType());
 
             ps.setInt(5, type.getPrimitiveType());
-            ps.setString(6, type.getDefaultUnit().getName());
+            ps.setString(6, type.getDefaultUnit().getSymbol());
 
             ps.setInt(7, type.getGUIPosition());
             ps.setInt(8, type.getValidity());

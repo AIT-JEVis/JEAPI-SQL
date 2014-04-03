@@ -22,6 +22,7 @@ package org.jevis.jeapi.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Locale;
+import javax.measure.unit.Unit;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisDataSource;
 import org.jevis.jeapi.JEVisException;
@@ -55,7 +56,7 @@ public class JEVisTypeSQL implements JEVisType {
             _class = jclass;
             _name = rs.getString(TypeTable.COLUMN_NAME);
             _guiType = rs.getString(TypeTable.COLUMN_DISPLAY_TYPE);
-            _unit = rs.getString(TypeTable.COLUMN_DEFAULT_UNIT);
+//            _unit = rs.getString(TypeTable.COLUMN_DEFAULT_UNIT);
             _guiWeight = rs.getInt(TypeTable.COLUMN_GUI_WEIGHT);
 //            _premitivType = rs.getString(TypeTable.COLUMN_PRIMITIV_TYPE);
             _premitivType = rs.getInt(TypeTable.COLUMN_PRIMITIV_TYPE);
@@ -64,7 +65,10 @@ public class JEVisTypeSQL implements JEVisType {
             _description = rs.getString(TypeTable.COLUMN_DESCRIPTION);
             cValue = rs.getString(TypeTable.COLUMN_VALUE);
 
-            _junit = new JEVisUnitSQL(ds, _unit);
+//            _junit = new JEVisUnitSQL(ds, _unit);
+            System.out.println("make unit for:'" + _unit + "'");
+            _junit = new JEVisUnitSQL(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+
 
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);

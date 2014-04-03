@@ -4,39 +4,70 @@
  */
 package org.jevis.jeapi.sql;
 
+import javax.measure.unit.BaseUnit;
+import javax.measure.unit.Unit;
 import org.jevis.jeapi.JEVisUnit;
 
 /**
  *
  * @author Florian Simon <florian.simon@envidatec.com>
  */
-public class JEVisUnitSQL implements JEVisUnit{
+public class JEVisUnitSQL implements JEVisUnit {
 
-    private String _name;
-    
-    public JEVisUnitSQL(JEVisDataSourceSQL ds,String name) {
-        _name=name;
+    private Unit _unit;
+
+    public JEVisUnitSQL(Unit _unit) {
+        this._unit = _unit;
     }
 
+    public JEVisUnitSQL(String unit) {
+        System.out.println("1");
+        if (unit == null || unit.isEmpty()) {
+            System.out.println("unit is null");
+            _unit = Unit.ONE;
+        } else {
+            System.out.println("unit is not null");
+            _unit = Unit.valueOf(unit);
+        }
 
+    }
+
+    @Override
     public boolean isSIUnit() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return _unit.isStandardUnit();
     }
 
+    @Override
     public JEVisUnit getSIUnit() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+        return new JEVisUnitSQL(_unit.getStandardUnit());
     }
 
-    public String getName() {
-        return _name;
+    @Override
+    public String getSymbol() {
+        return _unit.toString();//not save??
     }
 
-    public void doMagic() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+// belongs to the math part of the api !?
+//    public void ableitung(boolean intensiv, double x, double y) {
+//        if (intensiv) {
+//        } else {
+//        }
+//
+//    }
+    @Override
+    public boolean equals(JEVisUnit unit) {
+        //TODo: find a fast solution then to parse it again and agin.....
+        BaseUnit otherUnit = new BaseUnit(unit.getSymbol());
+        return _unit.equals(otherUnit);
     }
 
-    public void setName(String name) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    @Override
+    public boolean isCompatible(JEVisUnit unit) {
+        BaseUnit otherUnit = new BaseUnit(unit.getSymbol());
+        return _unit.isCompatible(otherUnit);
     }
-    
+
+    public Unit getUnit() {
+        return _unit;
+    }
 }
