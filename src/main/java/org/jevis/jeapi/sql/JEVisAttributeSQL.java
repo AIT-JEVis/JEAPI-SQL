@@ -23,6 +23,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.measure.unit.Unit;
 import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
@@ -31,7 +32,6 @@ import org.jevis.jeapi.JEVisExceptionCodes;
 import org.jevis.jeapi.JEVisObject;
 import org.jevis.jeapi.JEVisSample;
 import org.jevis.jeapi.JEVisType;
-import org.jevis.jeapi.JEVisUnit;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
@@ -51,6 +51,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private Period _period;
     private long _sampleCount;
     private JEVisDataSourceSQL _ds;
+    private Unit _unit;
+    private String _altSymbol;
 
     public JEVisAttributeSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
@@ -70,7 +72,6 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 _minTS = null;
             }
 
-
             _object = _ds.getObject(_objectID);
 
             if (rs.getString(AttributeTable.COLUMN_PERIOD) != null && !rs.getString(AttributeTable.COLUMN_PERIOD).isEmpty()) {
@@ -79,6 +80,20 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 _period = format.parsePeriod(rs.getString(AttributeTable.COLUMN_PERIOD));
             }
 
+            _altSymbol = rs.getString(AttributeTable.COLUMN_ALT_SYMBOL);
+            try {
+//                System.out.println("DB unit: " + rs.getString(AttributeTable.COLUMN_UNIT));
+                if (rs.getString(AttributeTable.COLUMN_UNIT) != null
+                        && !rs.getString(AttributeTable.COLUMN_UNIT).isEmpty()) {
+                    _unit = Unit.valueOf(rs.getString(AttributeTable.COLUMN_UNIT));
+                } else {
+                    _unit = Unit.ONE;
+                }
+            } catch (IllegalArgumentException ex) {
+                System.out.println("could not parse Unit: " + rs.getString(AttributeTable.COLUMN_UNIT));
+//                ex.printStackTrace();
+                _unit = Unit.ONE;
+            }
 
             //TODO add group
         } catch (SQLException ex) {
@@ -92,22 +107,27 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         _ds = ds;
     }
 
+    @Override
     public String getName() {
         return _name;
     }
 
+    @Override
     public boolean delete() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
 
+    @Override
     public JEVisType getType() throws JEVisException {
         return getObject().getJEVisClass().getType(_name);
     }
 
+    @Override
     public JEVisObject getObject() {
         return _object;
     }
 
+    @Override
     public List<JEVisSample> getAllSamples() {
         try {
             SampleTable st = new SampleTable(_ds);
@@ -119,6 +139,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
+    @Override
     public List<JEVisSample> getSamples(DateTime from, DateTime to) {
         try {
             SampleTable st = new SampleTable(_ds);
@@ -130,6 +151,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
+    @Override
     public int addSamples(List<JEVisSample> samples) throws JEVisException {
         //ToDo: check if sample are OK
 
@@ -153,21 +175,20 @@ public class JEVisAttributeSQL implements JEVisAttribute {
             }
         }
 
-
         commit();
 
         return count;//todo get real count
 
     }
 
+    @Override
     public long getSampleCount() {
         return _sampleCount;
     }
 
     protected void commit() throws JEVisException {
-        AttributeTable at = new AttributeTable(_ds);
-        at.updateAttributeTS(this);
-        List<JEVisAttribute> atts = at.getAttributes(_object);
+        _ds.getAttributeTable().updateAttributeTS(this);
+        List<JEVisAttribute> atts = _ds.getAttributeTable().getAttributes(_object);
         for (JEVisAttribute att : atts) {
             if (att.getName().equals(getName())) {
                 _sampleCount = att.getSampleCount();
@@ -178,6 +199,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     }
 
+    @Override
     public JEVisSample getLatestSample() {
         try {
             SampleTable st = new SampleTable(_ds);
@@ -189,10 +211,12 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
+    @Override
     public int getPrimitiveType() throws JEVisException {
         return getType().getPrimitiveType();
     }
 
+    @Override
     public boolean hasSample() {
         if (_sampleCount > 0) {
             return true;
@@ -201,14 +225,17 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
+    @Override
     public DateTime getTimestampFromFirstSample() {
         return _minTS;
     }
 
+    @Override
     public DateTime getTimestampFromLastSample() {
         return _maxTS;
     }
 
+    @Override
     public boolean deleteAllSample() throws JEVisException {
         if (RelationsManagment.canDelete(_ds.getCurrentUser(), _object)) {
             SampleTable st = new SampleTable(_ds);
@@ -226,6 +253,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     }
 
+    @Override
     public boolean deleteSamplesBetween(DateTime from, DateTime to) throws JEVisException {
         if (RelationsManagment.canDelete(_ds.getCurrentUser(), _object)) {
             SampleTable st = new SampleTable(_ds);
@@ -235,18 +263,30 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
-    public JEVisUnit getUnit() {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    @Override
+    public Unit getUnit() throws JEVisException {
+        if (_unit != null) {
+            return _unit;
+        }
+
+        //return default
+        return getType().getUnit();
     }
 
-    public void setUnit(JEVisUnit unit) {
-        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    @Override
+    public void setUnit(Unit unit) {
+        //TODO check if its allowed to set the unit of the attribute
+
+        _unit = unit;
+
     }
 
+    @Override
     public JEVisDataSource getDataSource() {
         return _ds;
     }
 
+    @Override
     public Period getPeriod() {
         return _period;
     }
@@ -277,6 +317,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         return true;
     }
 
+    @Override
     public boolean isType(JEVisType type) {
         try {
             if (type != null) {
@@ -292,10 +333,12 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     }
 
     //TODO will this replace the other 
+    @Override
     public JEVisSample buildSample(DateTime ts, Object value) throws JEVisException {
         return buildSample(ts, value, "");
     }
 
+    @Override
     public JEVisSample buildSample(DateTime ts, Object value, String note) throws JEVisException {
 //        System.out.println("build sample: " + ts + "  " + value + "   " + note);
         if (ts == null) {
@@ -333,15 +376,10 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                     }
                 }
 
-
             } catch (Exception ex) {
                 lastV = "Error";
             }
         }
-
-
-
-
 
         return "JEVisAttributeSQL{" + "name=" + _name + ", lastValue=" + lastV
                 + ", minTS=" + _minTS + ", maxTS=" + _maxTS + ", object="
@@ -363,6 +401,16 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         } catch (Exception ex) {
             return 1;
         }
+    }
+
+    @Override
+    public String getAlternativSymbol() throws JEVisException {
+        return _altSymbol;
+    }
+
+    @Override
+    public void setAlternativSymbol(String symbol) throws JEVisException {
+        _altSymbol = symbol;
     }
 
     protected void increasedCount() {

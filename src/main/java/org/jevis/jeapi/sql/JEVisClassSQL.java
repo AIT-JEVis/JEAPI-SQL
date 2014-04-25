@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 public class JEVisClassSQL implements JEVisClass {
 
     private JEVisDataSourceSQL _ds;
-    private ImageIcon _icon; //TODo is this a file resource?
+    private BufferedImage _icon; //TODo is this a file resource?
     private String _discription;
     private String _name = "";
     private boolean isLoaded = false;
@@ -80,21 +80,17 @@ public class JEVisClassSQL implements JEVisClass {
 //            _inheritance = new JEVisClassSQL(ds, rs.getString(ClassTable.COLUMN_INHERIT));
             _unique = rs.getBoolean(ClassTable.COLUMN_UNIQUE);
 
-
             byte[] bytes = rs.getBytes(ClassTable.COLUMN_ICON);
             if (bytes != null && bytes.length > 0) {
                 BufferedImage img = ImageIO.read(new ByteArrayInputStream(bytes));
-                _icon = new ImageIcon(img);
+//                _icon = new ImageIcon(img);
+                _icon = img;
             }
-
-
 
             //TODO add group
         } catch (Exception ex) {
             throw new JEVisException("Cannot parse Class: " + _name, JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
-
-
 
     }
 
@@ -126,13 +122,13 @@ public class JEVisClassSQL implements JEVisClass {
         }
     }
 
-    public ImageIcon getIcon() {
+    public BufferedImage getIcon() {
         load();
         return _icon;
     }
 
     @Override
-    public void setIcon(ImageIcon icon) {
+    public void setIcon(BufferedImage icon) {
         _icon = icon;
         _hasChanged = true;
     }
@@ -218,6 +214,7 @@ public class JEVisClassSQL implements JEVisClass {
 
             } catch (Exception ex) {
                 System.out.println("error while getting Attributes: " + ex);
+                ex.printStackTrace();
                 return new ArrayList<JEVisType>();
             }
         }
@@ -252,7 +249,6 @@ public class JEVisClassSQL implements JEVisClass {
 
         List<JEVisClass> vaildParents = new LinkedList<JEVisClass>();
         List<JEVisClassRelationship> relations = getRelationships();
-
 
         for (JEVisClassRelationship rel : relations) {
             try {
@@ -291,16 +287,14 @@ public class JEVisClassSQL implements JEVisClass {
             return null;
         }
 
-
     }
 
     @Override
     public void commit() throws JEVisException {
-        System.out.println("JEVisClass.commi()");
+        System.out.println("JEVisClass.commit()");
         if (!RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
-
 
         if (!_hasChanged) {
             System.out.println("Nothing changed.. Abort ");
@@ -309,7 +303,6 @@ public class JEVisClassSQL implements JEVisClass {
 
         ClassTable cdb = new ClassTable(_ds);
         cdb.update(this, _oldName);
-
 
         _hasChanged = false;
     }
@@ -420,7 +413,6 @@ public class JEVisClassSQL implements JEVisClass {
     @Override
     public List<JEVisClassRelationship> getRelationships(int type) throws JEVisException {
         List<JEVisClassRelationship> tmp = new LinkedList<JEVisClassRelationship>();
-
 
         for (JEVisClassRelationship cr : getRelationships()) {
             if (cr.isType(type)) {

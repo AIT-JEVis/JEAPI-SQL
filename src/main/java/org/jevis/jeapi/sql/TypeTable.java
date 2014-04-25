@@ -24,12 +24,12 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisType;
+import org.jevis.jecommon.unit.UnitManager;
 
 /**
  *
@@ -48,8 +48,10 @@ public class TypeTable {
     public final static String COLUMN_DESCRIPTION = "description";
     public final static String COLUMN_VALIDITY = "validity";
     public final static String COLUMN_VALUE = "value";
-    private JEVisDataSourceSQL _ds;
-    private Connection _connection;
+    public final static String COLUMN_ALT_SYMBOL = "altsymbol";
+
+    private final JEVisDataSourceSQL _ds;
+    private final Connection _connection;
 
     public TypeTable(JEVisDataSourceSQL ds) throws JEVisException {
         _ds = ds;
@@ -63,9 +65,8 @@ public class TypeTable {
                     + COLUMN_CLASS + "=?," + COLUMN_DISPLAY_TYPE + "=?,"
                     + COLUMN_PRIMITIV_TYPE + "=?," + COLUMN_DEFAULT_UNIT + "=?,"
                     + COLUMN_GUI_WEIGHT + "=?," + COLUMN_VALIDITY + "=?,"
-                    + COLUMN_VALUE + "=?"
+                    + COLUMN_VALUE + "=?," + COLUMN_ALT_SYMBOL + "=?"
                     + " where " + COLUMN_NAME + "=? and " + COLUMN_CLASS + "=?";
-
 
             PreparedStatement ps = _connection.prepareStatement(sql);
 
@@ -76,19 +77,19 @@ public class TypeTable {
             ps.setString(4, type.getGUIDisplayType());
 
             ps.setInt(5, type.getPrimitiveType());
-            ps.setString(6, type.getDefaultUnit().getSymbol());
+//            ps.setString(6, type.getUnit().toString());
+            ps.setString(6, UnitManager.getInstance().formate(type.getUnit()));
 
             ps.setInt(7, type.getGUIPosition());
             ps.setInt(8, type.getValidity());
 
             ps.setString(9, type.getConfigurationValue());
+            ps.setString(10, type.getAlternativSymbol());
 
-            ps.setString(10, originalName);
-            ps.setString(11, type.getJEVisClass().getName());
+            ps.setString(11, originalName);
+            ps.setString(12, type.getJEVisClass().getName());
 
-
-//            System.out.println("sql: " + ps);
-
+            System.out.println("sql-tpye: " + ps);
             int res = ps.executeUpdate();
 
             //Check if the name changed, if yes we have to change all existing JEVisObjects.....do we want that?
@@ -113,7 +114,6 @@ public class TypeTable {
 //                        System.out.println("updated " + res2 + " JEVisAttributes");
                     }
 
-
                 }
 
                 return true;
@@ -121,7 +121,6 @@ public class TypeTable {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
 
         return false;
 
@@ -179,7 +178,6 @@ public class TypeTable {
                 return false;
             }
 
-
         } catch (Exception ex) {
             ex.printStackTrace();
             return false;
@@ -198,7 +196,6 @@ public class TypeTable {
 
         String sql = "select * from " + TABLE
                 + " where " + COLUMN_CLASS + "=?";
-
 
         PreparedStatement ps = _connection.prepareStatement(sql);
         ps.setString(1, jclass.getName());

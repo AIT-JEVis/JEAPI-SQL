@@ -49,8 +49,10 @@ public class AttributeTable {
     public final static String COLUMN_PERIOD = "period";
     public final static String COLUMN_UNIT = "unit";
     public final static String COLUMN_COUNT = "samplecount";
-    private JEVisDataSourceSQL _ds;
-    private Connection _connection;
+    public final static String COLUMN_ALT_SYMBOL = "altsymbol";
+
+    private final JEVisDataSourceSQL _ds;
+    private final Connection _connection;
     Logger logger = LoggerFactory.getLogger(AttributeTable.class);
 
     public AttributeTable(JEVisDataSourceSQL ds) throws JEVisException {
@@ -62,8 +64,8 @@ public class AttributeTable {
     public void insert(JEVisType type, JEVisObject obj) {
         String sql = "insert into " + TABLE
                 + "(" + COLUMN_OBJECT + "," + COLUMN_NAME + "," + COLUMN_PERIOD
-                + "," + COLUMN_UNIT
-                + ") values(?,?,?,?)";
+                + "," + COLUMN_UNIT + "," + COLUMN_ALT_SYMBOL
+                + ") values(?,?,?,?,?)";
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -72,14 +74,14 @@ public class AttributeTable {
             ps.setLong(1, obj.getID());
             ps.setString(2, type.getName());
             ps.setString(3, "P15m");//TODO implement
-            ps.setString(4, "kwh");//TODO implent
+            ps.setString(4, type.getUnit().toString());
+            ps.setString(5, type.getAlternativSymbol());
 
             int count = ps.executeUpdate();
 //            System.out.println("success");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
     }
 
     //TODO: try-catch-finally
@@ -112,7 +114,9 @@ public class AttributeTable {
                 attributes.add(new JEVisAttributeSQL(_ds, rs));
             }
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new JEVisException("Error while fetching Attributes ", 85675, ex);
+
         }
 
         return attributes;
@@ -120,61 +124,13 @@ public class AttributeTable {
 
     /**
      *
-     * @param object
-     * @param attribute
-     * @throws SQLException
-     * @throws UnsupportedEncodingException
+     * @param att
+     * @throws JEVisException
      */
-//    public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
-//        String sql = "update " + TABLE
-//                + " set "
-//                + COLUMN_MAX_TS + "=?,"
-//                + COLUMN_MIN_TS + "=?,"
-//                + COLUMN_COUNT + "=?"
-//                + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
-//
-//        PreparedStatement ps = null;
-//
-//        try {
-//            _ds.addQuery();
-//            ps = _connection.prepareStatement(sql);
-//
-//            if (att.getTimestampFromLastSample() != null) {
-//                ps.setTimestamp(1, new Timestamp(att.getTimestampFromLastSample().getMillis()));
-//            } else {
-//                ps.setNull(1, Types.TIMESTAMP);
-//            }
-//
-//            if (att.getTimestampFromFirstSample() != null) {
-//                ps.setTimestamp(2, new Timestamp(att.getTimestampFromFirstSample().getMillis()));
-//            } else {
-//                ps.setNull(2, Types.TIMESTAMP);
-//            }
-//
-//            //TODo better let the DB handel this if the performance is ok
-//            ps.setLong(3, att.getSampleCount());
-//
-//            ps.setLong(4, att.getObject().getID());
-//            ps.setString(5, att.getName());
-////            System.out.println("update attribute: \n"+ps);
-//
-//            //TODO return this??
-//            int count = ps.executeUpdate();
-//
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//            throw new JEVisException("Error while updateing attribute ", 4233, ex);
-//        } finally {
-//            if (ps != null) {
-//                try {
-//                    ps.close();
-//                } catch (SQLException e) { /*ignored*/ }
-//            }
-//        }
-//    }
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
         String sql = "update " + TABLE
                 + " set "
+                + COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=? "//new
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"
@@ -186,21 +142,25 @@ public class AttributeTable {
             _ds.addQuery();
             ps = _connection.prepareStatement(sql);
 
-            //1. sub
-            ps.setLong(1, att.getObject().getID());
-            ps.setString(2, att.getName());
+            //unit
+            ps.setString(1, att.getAlternativSymbol());
+            ps.setString(2, att.getUnit().toString());
 
-            //2.sub
+            //1. sub
             ps.setLong(3, att.getObject().getID());
             ps.setString(4, att.getName());
 
-            //3.sub
+            //2.sub
             ps.setLong(5, att.getObject().getID());
             ps.setString(6, att.getName());
 
-            //when
+            //3.sub
             ps.setLong(7, att.getObject().getID());
             ps.setString(8, att.getName());
+
+            //when
+            ps.setLong(9, att.getObject().getID());
+            ps.setString(10, att.getName());
             System.out.println("update attribute: \n" + ps);
 
             //TODO return this??

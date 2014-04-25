@@ -22,13 +22,14 @@ package org.jevis.jeapi.sql;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Locale;
+import javax.measure.unit.BaseUnit;
 import javax.measure.unit.Unit;
 import org.jevis.jeapi.JEVisClass;
 import org.jevis.jeapi.JEVisDataSource;
 import org.jevis.jeapi.JEVisException;
 import org.jevis.jeapi.JEVisExceptionCodes;
 import org.jevis.jeapi.JEVisType;
-import org.jevis.jeapi.JEVisUnit;
+import org.jevis.jecommon.unit.UnitManager;
 
 /**
  *
@@ -41,7 +42,7 @@ public class JEVisTypeSQL implements JEVisType {
     private String _guiType;
     private JEVisClass _class;
     private String _unit;
-    private JEVisUnit _junit;
+    private Unit _junit;
     private int _guiWeight;
     private int _premitivType;
     private int _validity;
@@ -49,6 +50,7 @@ public class JEVisTypeSQL implements JEVisType {
     private String _oldName;
     private boolean _hasChanged = false;
     private String cValue;
+    private String _altSysmbol;
 
     public JEVisTypeSQL(JEVisDataSourceSQL ds, ResultSet rs, JEVisClass jclass) throws JEVisException {
         try {
@@ -56,19 +58,27 @@ public class JEVisTypeSQL implements JEVisType {
             _class = jclass;
             _name = rs.getString(TypeTable.COLUMN_NAME);
             _guiType = rs.getString(TypeTable.COLUMN_DISPLAY_TYPE);
-//            _unit = rs.getString(TypeTable.COLUMN_DEFAULT_UNIT);
             _guiWeight = rs.getInt(TypeTable.COLUMN_GUI_WEIGHT);
-//            _premitivType = rs.getString(TypeTable.COLUMN_PRIMITIV_TYPE);
             _premitivType = rs.getInt(TypeTable.COLUMN_PRIMITIV_TYPE);
             _validity = rs.getInt(TypeTable.COLUMN_VALIDITY);
 
             _description = rs.getString(TypeTable.COLUMN_DESCRIPTION);
             cValue = rs.getString(TypeTable.COLUMN_VALUE);
 
-//            _junit = new JEVisUnitSQL(ds, _unit);
-            System.out.println("make unit for:'" + _unit + "'");
-            _junit = new JEVisUnitSQL(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+//            System.out.println("make unit for:'" + _unit + "'");
+            _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
 
+//            if (rs.getString(TypeTable.COLUMN_DEFAULT_UNIT) != null
+//                    && !rs.getString(TypeTable.COLUMN_DEFAULT_UNIT).isEmpty()) {
+//                try {
+//                    _junit = BaseUnit.valueOf(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+//                } catch (IllegalArgumentException ex) {
+//                    _junit = Unit.ONE.alternate("E|" + rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+//                }
+//            } else {
+//                _junit = Unit.ONE;
+//            }
+            _altSysmbol = rs.getString(TypeTable.COLUMN_ALT_SYMBOL);
 
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -167,6 +177,7 @@ public class JEVisTypeSQL implements JEVisType {
         return getName();
     }
 
+    @Override
     public void setValidity(int validity) {
         _hasChanged = true;
         _validity = validity;
@@ -217,7 +228,7 @@ public class JEVisTypeSQL implements JEVisType {
         } catch (JEVisException ex) {
         }
 
-        return "JEVisTypeSQL{" + "name=" + _name + ", guiType=" + _guiType + ", class=" + className + ", unit=" + _unit + ", guiWeight=" + _guiWeight + ", premitivType=" + _premitivType + ", validity=" + _validity + '}';
+        return "JEVisTypeSQL{" + "name=" + _name + ", guiType=" + _guiType + ", class=" + className + ", unit=" + _unit + ", guiWeight=" + _guiWeight + ", premitivType=" + _premitivType + ", validity=" + _validity + ", alternativSymbol=" + _altSysmbol + '}';
     }
 
     @Override
@@ -237,7 +248,6 @@ public class JEVisTypeSQL implements JEVisType {
             tt.update(this, _oldName);
         }
 
-
     }
 
     @Override
@@ -255,20 +265,22 @@ public class JEVisTypeSQL implements JEVisType {
     }
 
     @Override
-    public JEVisUnit getDefaultUnit() {
+    public Unit getUnit() throws JEVisException {
         return _junit;
     }
 
     @Override
-    public void setDefaultUnit(JEVisUnit unit) {
+    public void setUnit(Unit unit) {
         _hasChanged = true;
         _junit = unit;
     }
 
+    @Override
     public String getConfigurationValue() {
         return cValue;
     }
 
+    @Override
     public void setConfigurationValue(String value) {
         _hasChanged = true;
         cValue = value;
@@ -288,4 +300,16 @@ public class JEVisTypeSQL implements JEVisType {
             return 1;
         }
     }
+
+    @Override
+    public String getAlternativSymbol() throws JEVisException {
+        return _altSysmbol;
+    }
+
+    @Override
+    public void setAlternativSymbol(String symbol) throws JEVisException {
+        _altSysmbol = symbol;
+        _hasChanged = true;
+    }
+
 }

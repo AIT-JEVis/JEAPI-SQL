@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import javax.measure.converter.UnitConverter;
+import javax.measure.unit.Unit;
 import org.jevis.jeapi.JEVisAttribute;
 import org.jevis.jeapi.JEVisConstants;
 import org.jevis.jeapi.JEVisDataSource;
@@ -64,6 +65,7 @@ public class JEVisSampleSQL implements JEVisSample {
     private String _filename;
     private byte[] _fileBytes;
     private Logger logger = LoggerFactory.getLogger(JEVisSampleSQL.class);
+    private Unit _unit = Unit.ONE;
 
     public JEVisSampleSQL(JEVisDataSourceSQL ds, JEVisAttribute att, Object value, DateTime ts) throws JEVisException {
         _ds = ds;
@@ -115,7 +117,6 @@ public class JEVisSampleSQL implements JEVisSample {
             _manip = rs.getString(SampleTable.COLUMN_MANID);
 
 //            _jManIP = new JEVisManipulationSQL(_manip);
-
             if (att.getPrimitiveType() == JEVisConstants.PrimitiveType.BOOLEAN) {
                 _tvalue = rs.getBoolean(SampleTable.COLUMN_VALUE);
             } else {
@@ -127,8 +128,6 @@ public class JEVisSampleSQL implements JEVisSample {
                 _tvalue = _fileBytes;
                 _filename = rs.getString(SampleTable.COLUMN_FILE_NAME);
             }
-
-
 
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -187,40 +186,21 @@ public class JEVisSampleSQL implements JEVisSample {
     }
 
     @Override
-    public Long getValueAsLong(JEVisUnit unit) {
-        Number convNumber = getOutputUnitConverter(unit).convert(getValueAsLong());
+    public Long getValueAsLong(Unit unit) throws JEVisException {
+        Number convNumber = getUnit().getConverterTo(unit).convert(getValueAsLong());
         return convNumber.longValue();
 
     }
 
     @Override
-    public Double getValueAsDouble(JEVisUnit unit) {
+    public Double getValueAsDouble(Unit unit) throws JEVisException {
         Double value = getValueAsDouble();
-        return getOutputUnitConverter(unit).convert(value);
+        return unit.getConverterTo(getUnit()).convert(value);
     }
 
-    private UnitConverter getOutputUnitConverter(JEVisUnit unit) {
-        if (getAttribute().getUnit().isCompatible(unit)) {
-            JEVisUnitSQL defautlUnit = (JEVisUnitSQL) getAttribute().getUnit();//not so pritty and save but fast
-            JEVisUnitSQL targetlUnit = (JEVisUnitSQL) unit;//not so pritty and save but fast
-
-            return defautlUnit.getUnit().getConverterTo(targetlUnit.getUnit());
-        } else {
-            return null;
-            //TODO throw better exeption
-        }
-    }
-
-    private UnitConverter getInputUnitConverter(JEVisUnit unit) {
-        if (getAttribute().getUnit().isCompatible(unit)) {
-            JEVisUnitSQL defautlUnit = (JEVisUnitSQL) getAttribute().getUnit();//not so pritty and save but fast
-            JEVisUnitSQL targetlUnit = (JEVisUnitSQL) unit;//not so pritty and save but fast
-
-            return targetlUnit.getUnit().getConverterTo(defautlUnit.getUnit());
-        } else {
-            return null;
-            //TODO throw better exeption
-        }
+    @Override
+    public Unit getUnit() throws JEVisException {
+        return getAttribute().getUnit();
     }
 
     @Override
@@ -238,9 +218,6 @@ public class JEVisSampleSQL implements JEVisSample {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Boolean getValueAsBoolean() {
         try {
@@ -259,8 +236,6 @@ public class JEVisSampleSQL implements JEVisSample {
             } else {
                 return (Boolean) _tvalue;
             }
-
-
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -297,7 +272,6 @@ public class JEVisSampleSQL implements JEVisSample {
                 _file = new JEVisFileSQL(this);
             }
 
-
             return _file;
 
         } catch (Exception ex) {
@@ -319,7 +293,6 @@ public class JEVisSampleSQL implements JEVisSample {
             } else {
                 _selection = new JEVisSelectionSQL(this);
             }
-
 
             return _selection;
 
@@ -343,7 +316,6 @@ public class JEVisSampleSQL implements JEVisSample {
                 _mSelection = new JEVisMultiSelectionSQL(this);
             }
 
-
             return _mSelection;
 
         } catch (Exception ex) {
@@ -359,11 +331,11 @@ public class JEVisSampleSQL implements JEVisSample {
     }
 
     @Override
-    public void setValue(Object value, JEVisUnit unit) throws JEVisException {
+    public void setValue(Object value, Unit unit) throws JEVisException {
         if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.DOUBLE) {
-            _tvalue = getInputUnitConverter(unit).convert((Double) value);
+            _tvalue = unit.getConverterTo(getUnit()).convert((Double) value);
         } else if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.LONG) {
-            Number tmp = getInputUnitConverter(unit).convert((Long) value);
+            Number tmp = unit.getConverterTo(getUnit()).convert((Long) value);
             _tvalue = tmp.longValue();
         } else {
             _tvalue = value;
@@ -404,8 +376,6 @@ public class JEVisSampleSQL implements JEVisSample {
             val = "Error";
         }
 
-
-
         return "JEVisSampleImp{" + "ts=" + _ts + ", value=" + val + ", note=" + _note + " '}'";
     }
 
@@ -437,8 +407,6 @@ public class JEVisSampleSQL implements JEVisSample {
 //        samples.add(this);
 //        sb.insertSamples(_jAttribute, samples);
 //
-
-
     }
 
     @Override

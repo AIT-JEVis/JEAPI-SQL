@@ -41,6 +41,11 @@
             <artifactId>jeapi</artifactId>
             <version>3.0.1-Alpha</version>
         </dependency>
+        <dependency>
+            <groupId>org.jevis</groupId>
+            <artifactId>JECommon</artifactId>
+            <version>3.0</version>
+        </dependency>
     </dependencies>
     
     <build>
