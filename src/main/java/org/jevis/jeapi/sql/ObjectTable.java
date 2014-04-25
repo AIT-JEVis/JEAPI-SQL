@@ -213,7 +213,7 @@ public class ObjectTable {
 
 
                     if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
-                        relType = JEVisConstants.ObjectRelationship.NESTEDT_CLASS;
+                        relType = JEVisConstants.ObjectRelationship.NESTED_CLASS;
                     }
                     _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), relType);
 
