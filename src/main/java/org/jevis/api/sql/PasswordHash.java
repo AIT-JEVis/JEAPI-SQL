@@ -1,4 +1,4 @@
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 /**
  * Password Hashing With PBKDF2 (http://crackstation.net/hashing-security.htm).

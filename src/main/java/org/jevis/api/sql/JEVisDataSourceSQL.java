@@ -17,7 +17,7 @@
  * JEAPI-SQL is part of the OpenJEVis project, further project information are
  * published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -26,13 +26,14 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import org.jevis.jeapi.JEVisClass;
-import org.jevis.jeapi.JEVisConstants;
-import org.jevis.jeapi.JEVisDataSource;
-import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisObject;
-import org.jevis.jeapi.JEVisRelationship;
+import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisConstants;
+import org.jevis.api.JEVisDataSource;
+import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.api.JEVisInfo;
+import org.jevis.api.JEVisObject;
+import org.jevis.api.JEVisRelationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +62,30 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private RelationshipTable _rt;
     private ClassRelationTable _crt;
     private int qCount = 0;//for benchmarking
+    private JEVisInfo _info = new JEVisInfo() {
 
+        @Override
+        public String getVersion() {
+            return "3.0.0";
+        }
+
+        @Override
+        public String getName() {
+            return "JEAPI-SQL";
+        }
+    };
+
+    /**
+     *
+     * @param db
+     * @param port
+     * @param schema
+     * @param user
+     * @param pw
+     * @param jevisUser
+     * @param jevisPW
+     * @throws JEVisException
+     */
     public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw, String jevisUser, String jevisPW) throws JEVisException {
         _dbHost = db;
         _dbPort = port;
@@ -107,15 +131,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             String conSring = "jdbc:mysql://" + _dbHost + ":" + _dbPort + "/" + _dbSchema + "?"
                     + "user=" + _dbUser + "&password=" + _dbPW;
             logger.info("Using Connection string: {}", conSring);
-
+            DriverManager.setLoginTimeout(10);
             _connect = DriverManager.getConnection(conSring);
             if (_connect.isValid(2000)) {
                 return true;
             } else {
                 return false;
             }
-
-
 
         } catch (Exception ex) {
             logger.error("Error while connecting to DB: {}", ex.getMessage());
@@ -222,7 +244,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
                 throw new JEVisException("Access not allowed to the object " + id + " from user " + getCurrentUser().getName(), JEVisExceptionCodes.UNAUTHORIZED);
             }
 
-
         } catch (Exception ex) {
             ex.printStackTrace();
             throw new JEVisException("error while select objetc from JEVis MySQL Datsource  ", JEVisExceptionCodes.DATASOURCE_FAILD, ex);
@@ -324,4 +345,10 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         qCount = 0;
         return tmp;
     }
+
+    @Override
+    public JEVisInfo getInfo() {
+        return _info;
+    }
+
 }

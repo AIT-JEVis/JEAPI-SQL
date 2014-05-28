@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License along with
  * JEAPI-SQL. If not, see <http://www.gnu.org/licenses/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
@@ -33,9 +33,9 @@ import java.util.List;
 import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
-import org.jevis.jeapi.JEVisClass;
-import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisExceptionCodes;
+import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
 import org.slf4j.LoggerFactory;
 
 /**

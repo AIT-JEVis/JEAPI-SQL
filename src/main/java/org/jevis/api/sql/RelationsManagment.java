@@ -17,20 +17,20 @@
  * JEAPI-SQL is part of the OpenJEVis project, further project information are
  * published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.jevis.jeapi.JEVisAttribute;
-import org.jevis.jeapi.JEVisClass;
-import org.jevis.jeapi.JEVisClassRelationship;
-import org.jevis.jeapi.JEVisObject;
-import org.jevis.jeapi.JEVisRelationship;
-import static org.jevis.jeapi.JEVisConstants.ObjectRelationship.*;
-import static org.jevis.jeapi.JEVisConstants.Class.*;
-import static org.jevis.jeapi.JEVisConstants.Attribute.*;
-import static org.jevis.jeapi.JEVisConstants.ClassRelationship.*;
-import org.jevis.jeapi.JEVisException;
+import org.jevis.api.JEVisAttribute;
+import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisClassRelationship;
+import org.jevis.api.JEVisObject;
+import org.jevis.api.JEVisRelationship;
+import static org.jevis.api.JEVisConstants.ObjectRelationship.*;
+import static org.jevis.api.JEVisConstants.Class.*;
+import static org.jevis.api.JEVisConstants.Attribute.*;
+import static org.jevis.api.JEVisConstants.ClassRelationship.*;
+import org.jevis.api.JEVisException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

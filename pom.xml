@@ -4,7 +4,7 @@
 
     <groupId>org.jevis.api.sql</groupId>
     <artifactId>jeapi-sql</artifactId>
-    <version>3.0.1-Alpha</version>
+    <version>3.0.1</version>
     <packaging>jar</packaging>
 
     <name>JEAPI-SQL</name>
@@ -39,11 +39,11 @@
         <dependency>
             <groupId>org.jevis.api</groupId>
             <artifactId>jeapi</artifactId>
-            <version>3.0.1-Alpha</version>
+            <version>3.0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.jevis</groupId>
-            <artifactId>JECommon</artifactId>
+            <groupId>org.jevis.commons</groupId>
+            <artifactId>JECommons</artifactId>
             <version>3.0</version>
         </dependency>
     </dependencies>

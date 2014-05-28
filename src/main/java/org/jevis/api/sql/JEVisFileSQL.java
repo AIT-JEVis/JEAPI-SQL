@@ -17,13 +17,13 @@
  * JEAPI is part of the OpenJEVis project, further project information are
  * published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
-import org.jevis.jeapi.JEVisFile;
+import org.jevis.api.JEVisFile;
 
 /**
  *

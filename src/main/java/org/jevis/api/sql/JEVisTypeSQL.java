@@ -17,19 +17,18 @@
  * JEAPI-SQL is part of the OpenJEVis project, further project information are
  * published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Locale;
-import javax.measure.unit.BaseUnit;
 import javax.measure.unit.Unit;
-import org.jevis.jeapi.JEVisClass;
-import org.jevis.jeapi.JEVisDataSource;
-import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisType;
-import org.jevis.jecommon.unit.UnitManager;
+import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisDataSource;
+import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.api.JEVisType;
+import org.jevis.commons.unit.UnitManager;
 
 /**
  *
@@ -66,8 +65,6 @@ public class JEVisTypeSQL implements JEVisType {
             cValue = rs.getString(TypeTable.COLUMN_VALUE);
 
 //            System.out.println("make unit for:'" + _unit + "'");
-            _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
-
 //            if (rs.getString(TypeTable.COLUMN_DEFAULT_UNIT) != null
 //                    && !rs.getString(TypeTable.COLUMN_DEFAULT_UNIT).isEmpty()) {
 //                try {
@@ -79,8 +76,11 @@ public class JEVisTypeSQL implements JEVisType {
 //                _junit = Unit.ONE;
 //            }
             _altSysmbol = rs.getString(TypeTable.COLUMN_ALT_SYMBOL);
+            System.out.println("parse unit");
+            _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
 
         } catch (SQLException ex) {
+//            ex.printStackTrace();
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
     }

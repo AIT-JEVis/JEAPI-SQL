@@ -17,7 +17,7 @@
  * JEAPI-SQL is part of the OpenJEVis project, further project information are
  * published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,16 +29,16 @@ import java.util.LinkedList;
 import java.util.List;
 import javax.measure.converter.UnitConverter;
 import javax.measure.unit.Unit;
-import org.jevis.jeapi.JEVisAttribute;
-import org.jevis.jeapi.JEVisConstants;
-import org.jevis.jeapi.JEVisDataSource;
-import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisFile;
-import org.jevis.jeapi.JEVisSelection;
-import org.jevis.jeapi.JEVisMultiSelection;
-import org.jevis.jeapi.JEVisSample;
-import org.jevis.jeapi.JEVisUnit;
+import org.jevis.api.JEVisAttribute;
+import org.jevis.api.JEVisConstants;
+import org.jevis.api.JEVisDataSource;
+import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.api.JEVisFile;
+import org.jevis.api.JEVisSelection;
+import org.jevis.api.JEVisMultiSelection;
+import org.jevis.api.JEVisSample;
+import org.jevis.api.JEVisUnit;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

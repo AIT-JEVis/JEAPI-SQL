@@ -18,7 +18,7 @@
  * JEWebService is part of the OpenJEVis project, further project information
  * are published at <http://www.OpenJEVis.org/>.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
@@ -32,11 +32,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
-import org.jevis.jeapi.JEVisAttribute;
-import org.jevis.jeapi.JEVisConstants;
-import org.jevis.jeapi.JEVisException;
-import org.jevis.jeapi.JEVisExceptionCodes;
-import org.jevis.jeapi.JEVisSample;
+import org.jevis.api.JEVisAttribute;
+import org.jevis.api.JEVisConstants;
+import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.api.JEVisSample;
 import org.joda.time.DateTime;
 
 /**

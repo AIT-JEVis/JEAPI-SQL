@@ -2,11 +2,11 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package org.jevis.jeapi.sql;
+package org.jevis.api.sql;
 
 import javax.measure.unit.BaseUnit;
 import javax.measure.unit.Unit;
-import org.jevis.jeapi.JEVisUnit;
+import org.jevis.api.JEVisUnit;
 
 /**
  *
@@ -21,7 +21,6 @@ public class JEVisUnitSQL implements JEVisUnit {
     }
 
     public JEVisUnitSQL(String unit) {
-        System.out.println("1");
         if (unit == null || unit.isEmpty()) {
             System.out.println("unit is null");
             _unit = Unit.ONE;
