@@ -75,9 +75,14 @@ public class JEVisTypeSQL implements JEVisType {
 //            } else {
 //                _junit = Unit.ONE;
 //            }
+//            System.out.println("TypePasing: au:" + rs.getString(TypeTable.COLUMN_ALT_SYMBOL) + " u: " + rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
             _altSysmbol = rs.getString(TypeTable.COLUMN_ALT_SYMBOL);
-            System.out.println("parse unit");
-            _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+            if (rs.getString(TypeTable.COLUMN_DEFAULT_UNIT) == null || rs.getString(TypeTable.COLUMN_DEFAULT_UNIT).isEmpty()) {
+//                System.out.println("has no unit so we take Unit.ONE");
+                _junit = Unit.ONE;
+            } else {
+                _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+            }
 
         } catch (SQLException ex) {
 //            ex.printStackTrace();
@@ -92,6 +97,7 @@ public class JEVisTypeSQL implements JEVisType {
 
     @Override
     public void setName(String name) {
+//        System.out.println("setName: " + name);
         _hasChanged = true;
         _oldName = _name;
         _name = name;
@@ -117,6 +123,7 @@ public class JEVisTypeSQL implements JEVisType {
 
     @Override
     public void setPrimitiveType(int type) {
+//        System.out.println("setPrimitiveType: " + type);
         _hasChanged = true;
         _premitivType = type;
     }
@@ -128,6 +135,7 @@ public class JEVisTypeSQL implements JEVisType {
 
     @Override
     public void setGUIDisplayType(String type) {
+//        System.out.println("setGUIDisplayType: " + type);
         _hasChanged = true;
         _guiType = type;
     }
@@ -242,9 +250,10 @@ public class JEVisTypeSQL implements JEVisType {
 
         TypeTable tt = new TypeTable(_ds);
         if (_oldName == null) {
+//            System.out.println("update only");
             tt.update(this, getName());
         } else {
-//            System.out.println("update");
+//            System.out.println("Name changed");
             tt.update(this, _oldName);
         }
 
@@ -303,11 +312,17 @@ public class JEVisTypeSQL implements JEVisType {
 
     @Override
     public String getAlternativSymbol() throws JEVisException {
+
+        if (_altSysmbol == null) {
+            _altSysmbol = "";
+
+        }
         return _altSysmbol;
     }
 
     @Override
     public void setAlternativSymbol(String symbol) throws JEVisException {
+        _hasChanged = true;
         _altSysmbol = symbol;
         _hasChanged = true;
     }

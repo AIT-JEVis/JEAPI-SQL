@@ -89,7 +89,7 @@ public class TypeTable {
             ps.setString(11, originalName);
             ps.setString(12, type.getJEVisClass().getName());
 
-            System.out.println("sql-tpye: " + ps);
+            System.out.println("sql.type.update: " + ps);
             int res = ps.executeUpdate();
 
             //Check if the name changed, if yes we have to change all existing JEVisObjects.....do we want that?

@@ -128,7 +128,7 @@ public class AttributeTable {
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
         String sql = "update " + TABLE
                 + " set "
-                + COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=? "//new
+                + COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=?, "//new
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"

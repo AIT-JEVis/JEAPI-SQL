@@ -29,7 +29,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
 import javax.imageio.ImageIO;
-import javax.swing.ImageIcon;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
 import org.jevis.api.JEVisConstants;
@@ -89,6 +88,8 @@ public class JEVisClassSQL implements JEVisClass {
 
             //TODO add group
         } catch (Exception ex) {
+
+            ex.printStackTrace();
             throw new JEVisException("Cannot parse Class: " + _name, JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
 
