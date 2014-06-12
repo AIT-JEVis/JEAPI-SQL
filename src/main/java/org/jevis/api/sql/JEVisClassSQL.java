@@ -185,14 +185,12 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public boolean isAllowedUnder(JEVisClass jevisClass) throws JEVisException {
-        System.out.println("isAllowedUnder: " + jevisClass);
         List<JEVisClass> vaild = getValidParents();
 //        for (JEVisClass pClass : vaild) {
 //            System.out.println("pClass: " + pClass);
 //        }
 
         for (JEVisClass pClass : vaild) {
-            System.out.println("compare: " + pClass);
             if (pClass.getName().equals(jevisClass.getName())) {
                 return true;
             }

@@ -113,8 +113,6 @@ public class JEVisObjectSQL implements JEVisObject {
 
         //TODO: implement the cach again
         //disabled the cach will be slower but faster
-
-
         if (_parentObjs == null) {
             _parentObjs = new LinkedList<JEVisObject>();
             for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT)) {
@@ -215,7 +213,6 @@ public class JEVisObjectSQL implements JEVisObject {
             Collections.sort(_attributes);
         }
 
-
 //        //Check if attributes are loaded
 //        //Workaround disable  this simple cach TODO:reimplement
 //        if (_attributes == null) {
@@ -243,8 +240,6 @@ public class JEVisObjectSQL implements JEVisObject {
 //            }
 //            Collections.sort(_attributes);
 //        }
-
-
         return _attributes;
     }
 
@@ -253,7 +248,6 @@ public class JEVisObjectSQL implements JEVisObject {
         if (isLink()) {
             return _linkedObject.getAttribute(type);
         }
-
 
         for (JEVisAttribute att : getAttributes()) {
             if (att.isType(type)) {
@@ -290,7 +284,6 @@ public class JEVisObjectSQL implements JEVisObject {
         } else {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
-
 
     }
 
@@ -348,6 +341,8 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public JEVisObject buildObject(String name, JEVisClass jclass) throws JEVisException {
+        System.out.println("buildObject: " + name + " | " + jclass);
+        System.out.println("Can create: " + RelationsManagment.canCreate(_ds.getCurrentUser(), this));
         if (RelationsManagment.canCreate(_ds.getCurrentUser(), this)) {
 
             if (jclass.isAllowedUnder(getJEVisClass())) {
@@ -390,7 +385,6 @@ public class JEVisObjectSQL implements JEVisObject {
         for (JEVisClassRelationship crel : crels) {//TODo: test
             newObj.buildObject(jclass.getName(), crel.getOtherClass((JEVisClass) this.getJEVisClass()));
         }
-
 
         return newObj;
     }

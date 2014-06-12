@@ -126,7 +126,7 @@ public class ObjectTable {
                 + " from " + TABLE
                 + " left join " + RelationshipTable.TABLE
                 + " on " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_START
-                + " and " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_END
+                + " or " + TABLE + "." + COLUMN_ID + "=" + RelationshipTable.TABLE + "." + RelationshipTable.COLUMN_END
                 + " where " + TABLE + "." + COLUMN_CLASS + " in (";
 
         PreparedStatement ps = null;
@@ -153,12 +153,25 @@ public class ObjectTable {
                 ps.setString(i + 1, cl.getName());//index start with 1 for prepareStatements...
             }
 
-
             rs = ps.executeQuery();
-            logger.debug("getObject.SQl : {}. ", ps);
+            logger.error("getObject.SQl : {}. ", ps);
 
             while (rs.next()) {
-                objects.add(new JEVisObjectSQL(_ds, rs));
+
+                //TODO:replace, this is an not so opimal way to load all relationships for an Object in one sql query
+                boolean isCache = false;
+                for (JEVisObject ob : objects) {
+                    if (ob.getID().equals(rs.getLong(COLUMN_ID))) {
+                        isCache = true;
+                        ((JEVisObjectSQL) ob).addRelationship(new JEVisRelationshipSQL(_ds, rs));
+                    }
+                }
+
+                if (!isCache) {
+                    JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
+                    newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
+                    objects.add(newObj);
+                }
 
             }
 
@@ -202,28 +215,16 @@ public class ObjectTable {
                         }
                     }
 
-
                     //and parenshiop or NESTEDT_CLASS depending on the Class
-                    System.out.println("add parent");
                     int relType = JEVisConstants.ObjectRelationship.PARENT;//not very save
 //                    if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
 //                        relType = JEVisConstants.ObjectRelationship.PARENT;
 //                    } else 
 
-
-
                     if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
                         relType = JEVisConstants.ObjectRelationship.NESTED_CLASS;
                     }
                     _ds.getRelationshipTable().insert(rs.getLong(1), parent.getID(), relType);
-
-
-
-
-
-
-
-
 
                     return getObject(rs.getLong(1), false);
                 } else {
@@ -261,7 +262,6 @@ public class ObjectTable {
             ps = _connection.prepareStatement(sql);
             ps.setString(1, object.getName());
             ps.setLong(2, object.getID());
-
 
             int count = ps.executeUpdate();
             if (count == 1) {
@@ -301,7 +301,6 @@ public class ObjectTable {
             ps.setString(4, "Link");
 
 //            System.out.println("putObjectLink.sql: " + ps);
-
             int count = ps.executeUpdate();
             if (count == 0) {
                 System.out.println("Create faild");
@@ -318,7 +317,6 @@ public class ObjectTable {
             ex.printStackTrace();
             throw new JEVisException("Error while creating object link", 234234, ex);//ToDo real number
         }
-
 
         return newObject;
     }
@@ -519,14 +517,11 @@ public class ObjectTable {
             }
             sql += ")";
 
-
-
             Calendar now = new GregorianCalendar();
 
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setTimestamp(1, new Timestamp(now.getTimeInMillis()));
             ps.setLong(2, obj.getID());
-
 
             for (int i = 0; i < children.size(); i++) {
                 JEVisObject ch = children.get(i);
@@ -574,7 +569,6 @@ public class ObjectTable {
         _ds.addQuery();
 
         try {
-
 
             ps = _connection.prepareStatement(sql);
             ps.setString(1, name);

@@ -105,10 +105,10 @@ public class RelationsManagment {
 
             for (JEVisRelationship or : object.getRelationships()) {
                 for (JEVisRelationship ur : userMemberships) {
-                    //is the Object Owner end the same as the user membership end
+                    //is the Object Owner end the same as the user membership end                    
 
 //                    logger.error("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
-                    if (ur.getEndObject().getID() == or.getEndObject().getID()) {
+                    if (ur.getEndObject().getID().equals(or.getEndObject().getID())) {
                         if (ur.isType(type)) {
                             return true;
                         }

@@ -65,7 +65,6 @@ public class RelationshipTable {
             ps.setInt(1, type);
             ResultSet rs = ps.executeQuery();
 
-
             while (rs.next()) {
                 relations.add(new JEVisRelationshipSQL(_ds, rs));
             }
@@ -84,8 +83,6 @@ public class RelationshipTable {
 
     //todo: implemet the return save and performant  
     public JEVisRelationship insert(long start, long end, int type) throws JEVisException {
-
-        System.out.println("insert cRel start: " + start + " end: " + end + " type: " + type);
 
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ")"
@@ -106,7 +103,6 @@ public class RelationshipTable {
             } else {
                 throw new JEVisException("Could not create the relationship", 1964823);
             }
-
 
         } catch (Exception ex) {
             logger.error("Error while inserting relationship into DB: {}", ex.getMessage());
@@ -148,7 +144,6 @@ public class RelationshipTable {
                 return false;
             }
 
-
         } catch (Exception ex) {
             logger.error("Error while deleting relationship from DB: {}", ex);
             ex.printStackTrace();
@@ -169,7 +164,6 @@ public class RelationshipTable {
     public boolean deleteAll(List<Long> ids) throws JEVisException {
 
         //TODO make it save with a prepared or so
-
         PreparedStatement ps = null;
         _ds.addQuery();
 
@@ -187,7 +181,6 @@ public class RelationshipTable {
                     + " where " + COLUMN_START + in
                     + " or " + COLUMN_END + in;
 
-
             ps = _connection.prepareStatement(sql);
 
             logger.debug("deleteAll.sql: {}", ps);
@@ -199,7 +192,6 @@ public class RelationshipTable {
             } else {
                 return false;
             }
-
 
         } catch (Exception ex) {
             logger.error("Error while deleting relationship from DB: {}", ex.getMessage());
