@@ -50,9 +50,9 @@ public class ClassRelationTable {
 
     /**
      *
-     * @param jclass
-     * @param inherit
+     * @param rel
      * @return
+     * @throws JEVisException
      */
     public boolean delete(JEVisClassRelationship rel) throws JEVisException {
         String sql = "delete from " + TABLE
@@ -70,14 +70,12 @@ public class ClassRelationTable {
             ps.setString(2, rel.getEnd().getName());
             ps.setInt(3, rel.getType());
 
-
             int count = ps.executeUpdate();
             if (count == 1) {
                 return true;
             } else {
                 return false;
             }
-
 
         } catch (Exception ex) {
             throw new JEVisException("Could not insert new ClassRelationship", 578246, ex);
@@ -89,14 +87,15 @@ public class ClassRelationTable {
             }
         }
 
-
     }
 
     /**
      *
-     * @param jclass
-     * @param inherit
+     * @param start
+     * @param end
+     * @param type
      * @return
+     * @throws JEVisException
      */
     public JEVisClassRelationship insert(JEVisClass start, JEVisClass end, int type) throws JEVisException {
         String sql = "insert into " + TABLE + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ") "
@@ -110,7 +109,7 @@ public class ClassRelationTable {
             ps.setString(2, end.getName());
             ps.setInt(3, type);
 
-
+            System.out.println("JEVisClassRelationship.insert: " + ps);
             int count = ps.executeUpdate();
             if (count > 0) {
                 //TODO: maybe fetch from Db to be save
@@ -118,7 +117,6 @@ public class ClassRelationTable {
             } else {
                 throw new JEVisException("Could not insert new ClassRelationship", 578245);
             }
-
 
         } catch (Exception ex) {
             throw new JEVisException("Could not insert new ClassRelationship", 578246, ex);
@@ -129,7 +127,6 @@ public class ClassRelationTable {
                 } catch (SQLException e) { /*ignored*/ }
             }
         }
-
 
     }
 
@@ -153,11 +150,9 @@ public class ClassRelationTable {
                 + " and c1." + ClassTable.COLUMN_NAME + " is not null "
                 + " and c2." + ClassTable.COLUMN_NAME + " is not null ";
 
-
         _ds.addQuery();
         PreparedStatement ps = null;
         try {
-
 
             ps = _connection.prepareStatement(sql);
             ps.setString(1, jclass.getName());
@@ -165,7 +160,6 @@ public class ClassRelationTable {
 
 //            System.out.println("CR.sql: " + ps);
             ResultSet rs = ps.executeQuery();
-
 
             while (rs.next()) {
                 relations.add(new JEVisClassRelationshipSQL(_ds, rs));

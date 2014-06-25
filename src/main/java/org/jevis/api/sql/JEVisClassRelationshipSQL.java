@@ -25,6 +25,7 @@ import java.util.LinkedList;
 import java.util.List;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
+import org.jevis.api.JEVisDataSource;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
 
@@ -50,7 +51,6 @@ public class JEVisClassRelationshipSQL implements JEVisClassRelationship {
             _ds = ds;
 
 //            System.out.println("new Rel: " + _start + "->" + _end + "=" + _type);
-
         } catch (SQLException ex) {
             ex.printStackTrace();
             throw new JEVisException("Cannot parse Classrelationship", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -87,7 +87,6 @@ public class JEVisClassRelationshipSQL implements JEVisClassRelationship {
 //        } else {
 //            return _ds.getJEVisClass(_end);
 //        }
-
 
 //        JEVisClass end = _ds.getJEVisClass(_end);
 //        if (_isInHereted && end.equals(_inHerited)) {
@@ -171,4 +170,10 @@ public class JEVisClassRelationshipSQL implements JEVisClassRelationship {
         _isInHereted = true;
         _heir = heir;
     }
+
+    @Override
+    public JEVisDataSource getDataSource() throws JEVisException {
+        return _ds;
+    }
+
 }

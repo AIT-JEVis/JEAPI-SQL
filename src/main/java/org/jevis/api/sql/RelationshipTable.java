@@ -81,6 +81,44 @@ public class RelationshipTable {
         return relations;
     }
 
+    /**
+     *
+     * @param id jevisObject id
+     * @return
+     */
+    public List<JEVisRelationship> selectForObject(long id) {
+        String sql = "select * from " + TABLE
+                + " where " + COLUMN_START + "=? "
+                + " or " + COLUMN_END + "=?";
+
+        PreparedStatement ps = null;
+        List<JEVisRelationship> relations = new LinkedList<JEVisRelationship>();
+        _ds.addQuery();
+
+        try {
+            ps = _connection.prepareStatement(sql);
+
+            ps.setLong(1, id);
+            ps.setLong(2, id);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                relations.add(new JEVisRelationshipSQL(_ds, rs));
+            }
+
+        } catch (Exception ex) {
+            logger.error("Error while selecting relationships from DB: {}", ex);
+        } finally {
+            if (ps != null) {
+                try {
+                    ps.close();
+                } catch (SQLException e) { /*ignored*/ }
+            }
+        }
+        return relations;
+    }
+
     //todo: implemet the return save and performant  
     public JEVisRelationship insert(long start, long end, int type) throws JEVisException {
 
@@ -88,6 +126,7 @@ public class RelationshipTable {
                 + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ")"
                 + " values (?,?,?)";
 
+        System.out.println("insert rel start: " + start + " end: " + end + " type: " + type);
         PreparedStatement ps = null;
         _ds.addQuery();
 

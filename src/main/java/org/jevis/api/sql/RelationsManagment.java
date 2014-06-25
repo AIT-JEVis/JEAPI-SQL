@@ -100,6 +100,7 @@ public class RelationsManagment {
      * @return
      */
     public static boolean checkMebershipForType(JEVisObject user, JEVisObject object, int type) throws JEVisException {
+//        System.out.println("checkMebershipForType: user: " + user.getID() + " object: " + object.getID() + " type: " + type);
         try {
             List<JEVisRelationship> userMemberships = getMembershipsRel(user);
 
@@ -117,9 +118,7 @@ public class RelationsManagment {
             }
         } catch (NullPointerException ne) {
             logger.debug("Error while checking Memberships:  {}", ne);//ToDO there is some error here
-            return false;
         }
-
         return false;
     }
 
@@ -131,7 +130,7 @@ public class RelationsManagment {
     public static List<JEVisRelationship> getRelationByType(JEVisObject object, int type) throws JEVisException {
         List<JEVisRelationship> memberships = new ArrayList<JEVisRelationship>();
         List<JEVisRelationship> objRel = object.getRelationships();
-        logger.debug("Relationship.size: {}", objRel.size());
+//        logger.debug("Relationship.size: {}", objRel.size());
         for (JEVisRelationship r : objRel) {
             if (r.isType(type)) {
                 memberships.add(r);
@@ -146,7 +145,7 @@ public class RelationsManagment {
      * @return
      */
     public static List<JEVisRelationship> getMembershipsRel(JEVisObject object) throws JEVisException {
-        logger.debug("getMembershipsRelations for {}", object.getID());
+//        logger.debug("getMembershipsRelations for {}", object.getID());
         List<JEVisRelationship> memberships = new ArrayList<JEVisRelationship>();
         List<JEVisRelationship> objRel = object.getRelationships();
 //        logger.debug("Relationship totals: {}", objRel.size());

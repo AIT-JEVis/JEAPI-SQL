@@ -22,12 +22,14 @@ package org.jevis.api.sql;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
@@ -98,6 +100,12 @@ public class JEVisClassSQL implements JEVisClass {
     @Override
     public void setIcon(File icon) throws JEVisException {
         _iconFile = icon;
+        try {
+            _icon = ImageIO.read(icon);
+            System.out.println("set icon from file: " + _icon.getWidth());
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(JEVisClassSQL.class.getName()).log(Level.SEVERE, null, ex);
+        }
         _hasChanged = true;
     }
 
@@ -117,12 +125,16 @@ public class JEVisClassSQL implements JEVisClass {
         _hasChanged = true;
     }
 
+    /**
+     * Not the best way to secure that the class is leaded properly
+     */
     private void load() {
         if (!isLoaded) {
             rollBack();
         }
     }
 
+    @Override
     public BufferedImage getIcon() {
         load();
         return _icon;
@@ -300,7 +312,7 @@ public class JEVisClassSQL implements JEVisClass {
             return;
         }
 
-        ClassTable cdb = new ClassTable(_ds);
+        ClassTable cdb = _ds.getClassTable();
         cdb.update(this, _oldName);
 
         _hasChanged = false;

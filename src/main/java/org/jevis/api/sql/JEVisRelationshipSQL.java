@@ -53,6 +53,7 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
         _type = rs.getInt(RelationshipTable.COLUMN_TYPE);
     }
 
+    @Override
     public JEVisObject getStartObject() throws JEVisException {
         if (_startObj == null) {
             _startObj = _ds.getObjectTable().getObject(_start, true);
@@ -60,6 +61,7 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
         return _startObj;
     }
 
+    @Override
     public JEVisObject getEndObject() throws JEVisException {
         if (_endObj == null) {
             _endObj = _ds.getObjectTable().getObject(_end, true);
@@ -67,27 +69,31 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
         return _endObj;
     }
 
+    @Override
     public JEVisObject[] getObjects() throws JEVisException {
         _objects[0] = getStartObject();
         _objects[1] = getEndObject();
         return _objects;
     }
 
+    @Override
     public JEVisObject getOtherObject(JEVisObject object) throws JEVisException {
         //ToDo make it save
-        if (object.getID() == getStartObject().getID()) {
+        if (object.getID().equals(getStartObject().getID())) {
             return getEndObject();
-        } else if (object.getID() == getEndObject().getID()) {
+        } else if (object.getID().equals(getEndObject().getID())) {
             return getStartObject();
         } else {
             throw new JEVisException("Object is not part of this Relationship", 3423408);
         }
     }
 
+    @Override
     public int getType() throws JEVisException {
         return _type;
     }
 
+    @Override
     public boolean isType(int type) throws JEVisException {
         if (_type == type) {
             return true;
@@ -96,6 +102,7 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
         }
     }
 
+    @Override
     public void delete() {
         throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
     }
@@ -145,7 +152,37 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
                 break;
         }
 
-
         return "JEVisRelationshipImp{" + "start=" + _start + ", end=" + _end + ", type=" + typeName + '}';
     }
+
+    @Override
+    public int hashCode() {
+        int hash = 3;
+        hash = 29 * hash + (int) (this._start ^ (this._start >>> 32));
+        hash = 29 * hash + (int) (this._end ^ (this._end >>> 32));
+        hash = 29 * hash + this._type;
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final JEVisRelationshipSQL other = (JEVisRelationshipSQL) obj;
+        if (this._start != other._start) {
+            return false;
+        }
+        if (this._end != other._end) {
+            return false;
+        }
+        if (this._type != other._type) {
+            return false;
+        }
+        return true;
+    }
+
 }

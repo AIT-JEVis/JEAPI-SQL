@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisDataSource;
@@ -195,9 +196,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public JEVisClass buildClass(String name) throws JEVisException {
         try {
+            System.out.println("Build new JEVisClass: " + name);
             if (RelationsManagment.isSysAdmin(_user)) {
+                System.out.println("User is Admin");
                 if (getClassTable().insert(name)) {
-                    return getJEVisClass(name);
+                    System.out.println("Insert done");
+
+                    return getClassTable().getObjectClass(name, false);
                 } else {
                     throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
                 }
@@ -235,7 +240,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public JEVisObject getObject(Long id) throws JEVisException {
         try {
             JEVisObject obj = null;
-
             obj = getObjectTable().getObject(id, true);
 
             if (RelationsManagment.canRead(_user, obj)) {
@@ -349,6 +353,46 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public JEVisInfo getInfo() {
         return _info;
+    }
+
+    @Override
+    public boolean isConnectionAlive() throws JEVisException {
+        if (_connect != null) {
+            try {
+                if (_connect.isValid(10)) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } catch (SQLException ex) {
+                java.util.logging.Logger.getLogger(JEVisDataSourceSQL.class.getName()).log(Level.SEVERE, null, ex);
+                return false;
+            }
+        } else {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean reconnect() throws JEVisException {
+        System.out.println("Reconnect with :" + _jevisUsername + " // " + _jevisUserPW);
+        if (connectToDB()) {
+            return connect(_jevisUsername, _jevisUserPW);
+        } else {
+            return false;
+        }
+
+    }
+
+    @Override
+    public boolean disconnect() throws JEVisException {
+        try {
+            _connect.close();
+            return true;
+        } catch (SQLException ex) {
+            java.util.logging.Logger.getLogger(JEVisDataSourceSQL.class.getName()).log(Level.SEVERE, null, ex);
+            return false;
+        }
     }
 
 }

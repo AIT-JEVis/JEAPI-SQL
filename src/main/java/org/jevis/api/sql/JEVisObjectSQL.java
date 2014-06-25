@@ -25,6 +25,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
@@ -37,9 +38,9 @@ import org.jevis.api.JEVisRelationship;
 import org.jevis.api.JEVisType;
 
 import static org.jevis.api.sql.ObjectTable.COLUMN_ID;
-import static org.jevis.api.sql.ObjectTable.COLUMN_LINK;
 import static org.jevis.api.sql.ObjectTable.COLUMN_NAME;
 import static org.jevis.api.sql.ObjectTable.COLUMN_CLASS;
+import org.jevis.commons.CommonClasses;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,7 +54,6 @@ public class JEVisObjectSQL implements JEVisObject {
     private boolean _hasChanged = false;
     private String _name;
     private long _id;
-    private long _link;
     private long _parentID;
     private List<JEVisObject> _parentObjs;
     private String _class;
@@ -63,7 +63,6 @@ public class JEVisObjectSQL implements JEVisObject {
     private JEVisClass _classObj;
     private List<JEVisAttribute> _attributes;
     private List<JEVisRelationship> _relationships = new LinkedList<JEVisRelationship>();
-    private boolean _isLink = false;
     private JEVisObject _linkedObject = null;
     private Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
 
@@ -72,38 +71,42 @@ public class JEVisObjectSQL implements JEVisObject {
             _ds = ds;
             _name = rs.getString(COLUMN_NAME);
             _id = rs.getLong(COLUMN_ID);
-            _link = rs.getLong(COLUMN_LINK);
+//            _link = rs.getLong(COLUMN_LINK);
 //            _parentID = rs.getLong(COLUMN_PARENT);
             _class = rs.getString(COLUMN_CLASS);
             _classObj = new JEVisClassSQL(ds, _class);
 //            _groupID = rs.getLong(COLUMN_GROUP);
 
-            if (_class.equals("Link")) {//TODO: this is now done by the Repationship, remove
-                _isLink = true;
-                _linkedObject = ds.getObject(_link);
-            }
+//            if (_class.equals("Link")) {//TODO: this is now done by the Repationship, remove
+//                _isLink = true;
+////                _linkedObject = ds.getObject(_link);
+//            }
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
     }
 
+    @Override
     public String getName() {
         return _name;
     }
 
+    @Override
     public void setName(String name) {
         _name = name;
         _hasChanged = true;
     }
 
+    @Override
     public Long getID() {
         return _id;
     }
 
+    @Override
     public JEVisClass getJEVisClass() throws JEVisException {
-        if (isLink()) {
-            return _linkedObject.getJEVisClass();
-        }
+//        if (isLink()) {
+//            return _linkedObject.getJEVisClass();
+//        }
 
         return _classObj;
     }
@@ -113,45 +116,96 @@ public class JEVisObjectSQL implements JEVisObject {
 
         //TODO: implement the cach again
         //disabled the cach will be slower but faster
-        if (_parentObjs == null) {
-            _parentObjs = new LinkedList<JEVisObject>();
-            for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT)) {
-                //find the relationshipts where we are the child
-                if (rel.getStartObject().getID() == _id) {
-                    if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getEndObject())) {
-                        _parentObjs.add(rel.getEndObject());
-                    }
+//        if (_parentObjs == null) {
+        _parentObjs = new LinkedList<JEVisObject>();
+        for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT, JEVisConstants.Direction.BACKWARD)) {
+            //find the relationshipts where we are the child
+            if (rel.getStartObject().getID() == _id) {
+                if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getEndObject())) {
+                    _parentObjs.add(rel.getEndObject());
                 }
             }
         }
+//        }
 
         return _parentObjs;
     }
 
     @Override
     public List<JEVisObject> getChildren() throws JEVisException {
-        //TODO: implement the cach again
-        //disabled the cach will be slower but faster
-//        _childrenObj = new LinkedList<JEVisObject>();
 
+//        printRelationships();//debug
         if (_childrenObj == null) {
             _childrenObj = new LinkedList<JEVisObject>();
 
-            //TODO improve performance by fetching all object a an singel querry
-            for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT)) {
-                //find the relationshipts where we are the parent
-                if (rel.getEndObject().getID() == _id && rel.isType(JEVisConstants.ObjectRelationship.PARENT)) {
-                    if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getStartObject())) {
-                        _childrenObj.add(rel.getStartObject());
-                    }
+            for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT, JEVisConstants.Direction.BACKWARD)) {
+                if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getStartObject())) {
 
+                    _childrenObj.add(rel.getStartObject());
+                } else {
+                    System.out.println("Has NO access to: " + rel.getStartObject());
                 }
+
             }
 
             Collections.sort(_childrenObj);
         }
 
         return _childrenObj;
+    }
+
+    //Debug helper
+    private void printRelationships() {
+        try {
+            String typeName = "";
+            for (JEVisRelationship rel : getRelationships()) {
+                switch (rel.getType()) {
+                    case 1:
+                        typeName = "Parent";
+                        break;
+                    case 2:
+                        typeName = "Link";
+                        break;
+                    case 3:
+                        typeName = "Root";
+                        break;
+                    case 4:
+                        typeName = "Source";
+                        break;
+                    case 5:
+                        typeName = "Service";
+                        break;
+                    case 6:
+                        typeName = "Input";
+                        break;
+                    case 7:
+                        typeName = "Data";
+                        break;
+                    case 100:
+                        typeName = "Owner";
+                        break;
+                    case 101:
+                        typeName = "Member - Read";
+                        break;
+                    case 102:
+                        typeName = "Member - Write";
+                        break;
+                    case 103:
+                        typeName = "Member - Exe";
+                        break;
+                    case 104:
+                        typeName = "Member - Create";
+                        break;
+                    case 105:
+                        typeName = "Member - Delete";
+                        break;
+                }
+                String msg = String.format("+rel: from [%s]%s to [%s]%s type: %S", rel.getStartObject().getID(), rel.getStartObject().getName(), rel.getEndObject().getID(), rel.getEndObject().getName(), typeName);
+                System.out.println(msg);
+            }
+        } catch (JEVisException ex) {
+            java.util.logging.Logger.getLogger(JEVisObjectSQL.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 
     @Override
@@ -182,21 +236,20 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public List<JEVisAttribute> getAttributes() throws JEVisException {
-        if (isLink()) {
-            return _linkedObject.getAttributes();
-        }
+//        if (isLink()) {
+//            System.out.println("getLink.getAttributes(): " + this.getID());
+//            return _linkedObject.getAttributes();
+//        }
 
         //Check if attributes are loaded
         //Workaround disable  this simple cach TODO:reimplement
         if (_attributes == null) {
             _attributes = new LinkedList<JEVisAttribute>();
             AttributeTable adb = _ds.getAttributeTable();
-            List<JEVisAttribute> tmpAttributes = adb.getAttributes(this);
-
             //allow onl y vaild types, add missing
             for (JEVisType type : getJEVisClass().getTypes()) {
                 boolean isThere = false;
-                for (JEVisAttribute att : tmpAttributes) {
+                for (JEVisAttribute att : adb.getAttributes(this)) {
                     if (att.isType(type)) {
                         isThere = true;
                         _attributes.add(att);
@@ -245,9 +298,9 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public JEVisAttribute getAttribute(JEVisType type) throws JEVisException {
-        if (isLink()) {
-            return _linkedObject.getAttribute(type);
-        }
+//        if (isLink()) {
+//            return _linkedObject.getAttribute(type);
+//        }
 
         for (JEVisAttribute att : getAttributes()) {
             if (att.isType(type)) {
@@ -342,6 +395,12 @@ public class JEVisObjectSQL implements JEVisObject {
     @Override
     public JEVisObject buildObject(String name, JEVisClass jclass) throws JEVisException {
         System.out.println("buildObject: " + name + " | " + jclass);
+
+        //TODO: is this nessasary now?
+        if (getJEVisClass().equals(CommonClasses.LINK.NAME)) {
+            throw new JEVisException("Can not create an object under an Link", 85393);
+        }
+
         System.out.println("Can create: " + RelationsManagment.canCreate(_ds.getCurrentUser(), this));
         if (RelationsManagment.canCreate(_ds.getCurrentUser(), this)) {
 
@@ -419,37 +478,59 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public String toString() {
-        if (isLink()) {
-            try {
-                return "JEVisObjectSQL{" + "name=" + _name + ", id=" + _id + ", link=" + _link + ", parentID=" + _parentID
-                        + ", class=" + _linkedObject.getJEVisClass().getName()
-                        + ", groupID=" + _groupID + '}';
-
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-
-        }
-
-        return "JEVisObjectSQL{" + "name=" + _name + ", id=" + _id + ", link=" + _link + ", class=" + _class + '}';
-    }
-
-    @Override
-    public boolean isLink() {
-//        List<JEVisRelationship> rels = RelationsManagment.getRelationByType(this, JEVisConstants.RELATIONSHIP_TYPE_LINK);
-//        for (JEVisRelationship r : rels) {
-//            if (r.getStartObject().getID() == _id) {
-//                return true;
+//        if (isLink()) {
+//            try {
+//                return "JEVisObjectSQL{" + "name=" + _name + ", id=" + _id + ", link=" + isLink() + ", parentID=" + _parentID
+//                        + ", class=" + _linkedObject.getJEVisClass().getName()
+//                        + ", groupID=" + _groupID + '}';
+//
+//            } catch (Exception ex) {
+//                ex.printStackTrace();
 //            }
+//
 //        }
-        return false;
+
+        return "JEVisObjectSQL{" + "name=" + _name + ", id=" + _id + ", link=" + "?" + ", class=" + _class + '}';
     }
 
+//    @Override
+//    public boolean isLink() {
+//        try {
+//            for (JEVisRelationship rel : _relationships) {//(JEVisConstants.ObjectRelationship.LINK, JEVisConstants.Direction.FORWARD)) {
+//                if (rel.getType() == JEVisConstants.ObjectRelationship.LINK && rel.getStartObject().equals(this)) {
+//                    System.out.println("is link: " + rel);
+//                    return true;
+//                }
+//
+//            }
+//        } catch (JEVisException ex) {
+//            java.util.logging.Logger.getLogger(JEVisObjectSQL.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//        return false;
+//    }
     @Override
     public JEVisObject getLinkedObject() throws JEVisException {
-        return _linkedObject;
+        try {
+            for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.LINK, JEVisConstants.Direction.FORWARD)) {
+//                System.out.println("return link object: " + rel.getEndObject());
+                return rel.getEndObject();
+            }
+        } catch (JEVisException ex) {
+            java.util.logging.Logger.getLogger(JEVisObjectSQL.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return null;
     }
 
+//    @Override
+//    public JEVisObject buildLink(String name, JEVisObject parent) throws JEVisException {
+//        JEVisObject newObjLink = parent.buildObject(name, _ds.getJEVisClass("Link"));
+//
+//        if (newObjLink != null) {
+//            buildRelationship(parent, JEVisConstants.ObjectRelationship.LINK, JEVisConstants.Direction.FORWARD);
+//        }
+//
+//        return null;
+//    }
     @Override
     public void commit() throws JEVisException {
         if (_hasChanged) {
@@ -499,38 +580,108 @@ public class JEVisObjectSQL implements JEVisObject {
         }
 
         _relationships.add(newRel);
+
+        //TODO: Simple cache cleaning, redo
+        if (newRel.getType() == JEVisConstants.ObjectRelationship.PARENT) {
+            _childrenObj = null;
+        }
+
         return newRel;
     }
 
     @Override
     public void deleteRelationship(JEVisRelationship rel) throws JEVisException {
-        if (!RelationsManagment.canWrite(_ds.getCurrentUser(), this)
-                || !RelationsManagment.canWrite(_ds.getCurrentUser(), rel.getOtherObject(this))) {
+        System.out.println("\n\ndeleteRelationship: " + rel);
+        System.out.println("This: " + this);
+        System.out.println("start: " + rel.getStartObject() + "\nend: " + rel.getEndObject());
+        System.out.println("need write to: " + rel.getOtherObject(this));
+
+        //we only need the permisson for this object        
+        if (!RelationsManagment.canWrite(_ds.getCurrentUser(), this)) {
+//                || !RelationsManagment.canWrite(_ds.getCurrentUser(), rel.getOtherObject(this))) {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
 
-        if (rel.getStartObject().getID() == _id || rel.getEndObject().getID() == _id) {
+        //TODO i think we habe to make an additonal security check for userright relationships
+        if (rel.getType() == JEVisConstants.ObjectRelationship.OWNER
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_CREATE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_DELETE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_EXECUTE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_READ
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_WRITE) {
+            //TODO hndel this rights
+            System.out.println("WARNING user trys to delete userright but checking is not enabled: " + rel);
+            //throw JEVisException
+        }
+
+        System.out.println("can delete relationship: " + rel);
+        System.out.println("this object: " + _id);
+
+        boolean isOK = false;
+        for (JEVisRelationship orgRel : _relationships) {
+            if (orgRel.equals(rel)) {
+                isOK = true;
+                break;
+            }
+        }
+        if (isOK) {
             if (!_ds.getRelationshipTable().delete(rel)) {
                 throw new JEVisException("Could not delete Relationship", 342385);
             } else {
+                System.out.println("delete done");
                 _relationships.remove(rel);
+////
+////                if (rel.isType(JEVisConstants.ObjectRelationship.PARENT)) {
+////                    dsf
+////                }
             }
         } else {
             throw new JEVisException("This relationship does not belong to this object", 689355);
         }
+
+//        if (rel.getStartObject().getID() == _id || rel.getEndObject().getID() == _id) {
+//            System.out.println("is part of this object");
+//            if (!_ds.getRelationshipTable().delete(rel)) {
+//                throw new JEVisException("Could not delete Relationship", 342385);
+//            } else {
+//                _relationships.remove(rel);
+//            }
+//        } else {
+//            throw new JEVisException("This relationship does not belong to this object", 689355);
+//        }
     }
 
     @Override
     public List<JEVisRelationship> getRelationships() throws JEVisException {
         //ToDo: care for userrights
-
         return _relationships;
     }
 
     @Override
+    public boolean isAllowedUnder(JEVisObject otherObject) throws JEVisException {
+//        if (isLink() && otherObject.getJEVisClass().equals(_ds.getJEVisClass(CommonClasses.LINK.NAME))) {
+//            return true;
+//        } else if (isLink() && otherObject.isLink()) {
+//
+//        }
+
+        for (JEVisClassRelationship rel : getJEVisClass().getRelationships(JEVisConstants.ClassRelationship.OK_PARENT, JEVisConstants.Direction.FORWARD)) {
+            System.out.println("isAllowedUnder: " + rel);
+            System.out.println("Rel End: " + rel.getEnd());
+            if (rel.getEnd().equals(otherObject.getJEVisClass())) {
+                System.out.println("is Allowed");
+                return true;
+
+            }
+        }
+        return false;
+    }
+
+    @Override
     public List<JEVisRelationship> getRelationships(int type) throws JEVisException {
+        System.out.println("getRelationships(int)");
         List<JEVisRelationship> tmp = new LinkedList<JEVisRelationship>();
-        for (JEVisRelationship rel : _relationships) {
+        for (JEVisRelationship rel : getRelationships()) {
             if (rel.isType(type)) {
                 tmp.add(rel);
             }
@@ -541,13 +692,23 @@ public class JEVisObjectSQL implements JEVisObject {
     @Override
     public List<JEVisRelationship> getRelationships(int type, int direction) throws JEVisException {
         List<JEVisRelationship> tmp = new LinkedList<JEVisRelationship>();
-        for (JEVisRelationship rel : _relationships) {
-            if (rel.isType(type)) {
-                if (rel.getStartObject().getID() == _id && direction == JEVisConstants.Direction.FORWARD) {
-                    tmp.add(rel);
-                } else if (rel.getEndObject().getID() == _id && direction == JEVisConstants.Direction.BACKWARD) {
-                    tmp.add(rel);
+        for (JEVisRelationship rel : getRelationships()) {
+            try {
+//                System.out.println("#: " + rel);
+//                System.out.println("type: " + rel.isType(type));
+//                System.out.println("startObj: " + rel.getStartObject());
+//                System.out.println("endObject: " + rel.getEndObject());
+
+                if (rel.isType(type)) {
+                    if (rel.getStartObject().getID() == _id && direction == JEVisConstants.Direction.FORWARD) {
+                        tmp.add(rel);
+                    } else if (rel.getEndObject().getID() == _id && direction == JEVisConstants.Direction.BACKWARD) {
+                        tmp.add(rel);
+                    }
                 }
+            } catch (Exception ex) {
+                //TODO: handel this excetption, most likly there is an error in the api
+                System.out.println("getRelationships(int,int).error: " + ex);
             }
         }
         return tmp;
@@ -556,7 +717,7 @@ public class JEVisObjectSQL implements JEVisObject {
     protected void addRelationship(JEVisRelationship rel) throws JEVisException {
         logger.debug("Add relationship to object: {}", rel);
         //TODO: mabe check if this relation is ok, but this is protected so no prio
-        _relationships.add(rel);
+        getRelationships().add(rel);
     }
 
     @Override

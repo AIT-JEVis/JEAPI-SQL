@@ -19,7 +19,6 @@
  */
 package org.jevis.api.sql;
 
-import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -91,8 +90,7 @@ public class AttributeTable {
      *
      * @param object
      * @return
-     * @throws SQLException
-     * @throws UnsupportedEncodingException
+     * @throws JEVisException
      */
     public List<JEVisAttribute> getAttributes(JEVisObject object) throws JEVisException {
         List<JEVisAttribute> attributes = new ArrayList<JEVisAttribute>();
@@ -105,7 +103,7 @@ public class AttributeTable {
             PreparedStatement ps = _connection.prepareStatement(sql);
             ps.setLong(1, object.getID());
 
-            //        System.out.println("SQL: "+ps);
+//            System.out.println("SQL: " + ps);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {

@@ -56,11 +56,13 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     public JEVisAttributeSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
+
             _ds = ds;
             _name = rs.getString(AttributeTable.COLUMN_NAME);
             _sampleCount = rs.getLong(AttributeTable.COLUMN_COUNT);
 
             _objectID = rs.getLong(AttributeTable.COLUMN_OBJECT);
+            _object = _ds.getObject(_objectID);
 
             _maxTS = new DateTime(rs.getTimestamp(AttributeTable.COLUMN_MAX_TS));
             if (rs.wasNull()) {
@@ -71,8 +73,6 @@ public class JEVisAttributeSQL implements JEVisAttribute {
             if (rs.wasNull()) {
                 _minTS = null;
             }
-
-            _object = _ds.getObject(_objectID);
 
             if (rs.getString(AttributeTable.COLUMN_PERIOD) != null && !rs.getString(AttributeTable.COLUMN_PERIOD).isEmpty()) {
 

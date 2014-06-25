@@ -209,8 +209,16 @@ public class ObjectTable {
 
                 if (rs.next()) {
                     //add ownership
-                    for (JEVisRelationship rel : parent.getRelationships()) {
-                        if (rel.isType(JEVisConstants.ObjectRelationship.OWNER) && rel.getStartObject().getID() == parent.getID()) {
+                    System.out.println("add owner to new object\n\n");
+                    for (JEVisRelationship rel : _ds.getRelationshipTable().selectForObject(parent.getID())) {
+//                    for (JEVisRelationship rel : parent.getRelationships()) {
+                        System.out.println("rel: " + rel);
+                        System.out.println("startobj: " + rel.getStartObject());
+                        System.out.println("endobj: " + rel.getEndObject());
+                        System.out.println("issametype: " + rel.isType(JEVisConstants.ObjectRelationship.OWNER));
+
+                        if (rel.isType(JEVisConstants.ObjectRelationship.OWNER) && rel.getStartObject().equals(parent)) {
+                            System.out.println("copy this ownership for:" + rs.getLong(1));
                             _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.ObjectRelationship.OWNER);
                         }
                     }
