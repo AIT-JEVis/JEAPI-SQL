@@ -126,7 +126,7 @@ public class RelationshipTable {
                 + " (" + COLUMN_START + "," + COLUMN_END + "," + COLUMN_TYPE + ")"
                 + " values (?,?,?)";
 
-        System.out.println("insert rel start: " + start + " end: " + end + " type: " + type);
+//        System.out.println("insert rel start: " + start + " end: " + end + " type: " + type);
         PreparedStatement ps = null;
         _ds.addQuery();
 

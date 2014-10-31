@@ -218,7 +218,7 @@ public class ObjectTable {
 //                        System.out.println("issametype: " + rel.isType(JEVisConstants.ObjectRelationship.OWNER));
 
                         if (rel.isType(JEVisConstants.ObjectRelationship.OWNER) && rel.getStartObject().equals(parent)) {
-                            System.out.println("copy this ownership for:" + rs.getLong(1));
+//                            System.out.println("copy this ownership for:" + rs.getLong(1));
                             _ds.getRelationshipTable().insert(rs.getLong(1), rel.getEndObject().getID(), JEVisConstants.ObjectRelationship.OWNER);
                         }
                     }

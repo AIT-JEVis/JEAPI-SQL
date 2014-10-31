@@ -199,7 +199,7 @@ public class JEVisClassSQL implements JEVisClass {
     public boolean isAllowedUnder(JEVisClass jevisClass) throws JEVisException {
         List<JEVisClass> vaild = getValidParents();
         for (JEVisClass pClass : vaild) {
-            System.out.println("valid.parent: " + pClass);
+//            System.out.println("valid.parent: " + pClass);
         }
 
         for (JEVisClass pClass : vaild) {
@@ -254,19 +254,23 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public List<JEVisClass> getValidParents() throws JEVisException {
-        if (getInheritance() != null) {
-            return getInheritance().getValidParents();
-        }
 
         List<JEVisClass> vaildParents = new LinkedList<JEVisClass>();
         List<JEVisClassRelationship> relations = getRelationships();
+
+        if (getInheritance() != null) {
+            vaildParents.addAll(getInheritance().getValidParents());
+        }
 
         for (JEVisClassRelationship rel : relations) {
             try {
                 if (rel.isType(JEVisConstants.ClassRelationship.OK_PARENT)
                         && rel.getStart().equals(this)) {
-                    vaildParents.add(rel.getOtherClass(this));
+                    if (!vaildParents.contains(rel.getOtherClass(this))) {
+                        vaildParents.add(rel.getOtherClass(this));
+                    }
                     vaildParents.addAll(rel.getOtherClass(this).getHeirs());
+
                 }
             } catch (Exception ex) {
                 logger.error("An JEClassRelationship had an error for '{}': {}", getName(), ex);

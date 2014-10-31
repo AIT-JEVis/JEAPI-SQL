@@ -81,7 +81,9 @@ public class JEVisTypeSQL implements JEVisType {
 //                System.out.println("has no unit so we take Unit.ONE");
                 _junit = Unit.ONE;
             } else {
-                _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+                System.out.println("Rase Unit String: '" + rs.getString(TypeTable.COLUMN_DEFAULT_UNIT) + "'");
+                _junit = Unit.valueOf(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
+//                _junit = UnitManager.getInstance().parseUnit(rs.getString(TypeTable.COLUMN_DEFAULT_UNIT));
             }
 
         } catch (SQLException ex) {

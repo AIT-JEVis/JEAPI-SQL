@@ -727,14 +727,61 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public List<JEVisClass> getAllowedChildrenClasses() throws JEVisException {
+//        System.out.println("getAllowedChildrenClasses() for " + getName());
+
         List<JEVisClassRelationship> rels = getJEVisClass().getRelationships(
                 JEVisConstants.ClassRelationship.OK_PARENT,
                 JEVisConstants.Direction.BACKWARD);
         List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
         for (JEVisClassRelationship rel : rels) {
-            okClasses.add(rel.getOtherClass(getJEVisClass()));
+            JEVisClass isAllowedClass = rel.getOtherClass(getJEVisClass());
+//            System.out.println("OK child = " + isAllowedClass);
+            okClasses.add(isAllowedClass);
+
+            okClasses.addAll(getHeiredClasses(isAllowedClass));
+
+//            if (getName().equals("Kühlschrank")) {
+//                for (JEVisClassRelationship krel : rel.getOtherClass(getJEVisClass()).getRelationships()) {
+//                    System.out.println("hmm : " + krel);
+//                }
+//            }
+            //get the heir also
+//            List<JEVisClassRelationship> heirs = isAllowedClass.getRelationships(
+//                    JEVisConstants.ClassRelationship.INHERIT, JEVisConstants.Direction.BACKWARD);
+//            for (JEVisClassRelationship rel2 : heirs) {
+//                System.out.println("    Inherit: " + rel2);
+//                System.out.println("    other:   " + rel2.getOtherClass(isAllowedClass));
+//                okClasses.add(rel2.getOtherClass(isAllowedClass));
+//            }
         }
 
         return okClasses;
     }
+
+    List<JEVisClass> getHeiredClasses(JEVisClass original) throws JEVisException {
+//        System.out.println("..find other OK class for " + original.getName());
+        List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
+
+        for (JEVisClassRelationship rel : original.getRelationships(
+                JEVisConstants.ClassRelationship.INHERIT, JEVisConstants.Direction.BACKWARD)) {
+            JEVisClass okClass = rel.getOtherClass(original);
+
+            if (!okClasses.contains(okClass)) {
+                okClasses.add(okClass);
+                try {
+                    System.out.println("add OK class: " + okClass);
+                    okClasses.addAll(getHeiredClasses(okClass));
+                } catch (JEVisException ex) {
+                    System.out.println("there is an error with the OK Class check for " + original.getName() + " ... continuing");
+                }
+            } else {
+                System.out.println("Waring there is some loop in the OK Class check for " + original.getName());
+                break;
+            }
+
+        }
+
+        return okClasses;
+    }
+
 }

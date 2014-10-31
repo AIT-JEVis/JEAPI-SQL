@@ -26,6 +26,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.measure.unit.UnitFormat;
 import org.jevis.commons.unit.UnitManager;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisException;
@@ -77,8 +78,9 @@ public class TypeTable {
             ps.setString(4, type.getGUIDisplayType());
 
             ps.setInt(5, type.getPrimitiveType());
-//            ps.setString(6, type.getUnit().toString());
-            ps.setString(6, UnitManager.getInstance().formate(type.getUnit()));
+            System.out.println("sql.unit: " + type.getUnit());
+            ps.setString(6, type.getUnit().toString());
+//            ps.setString(6, UnitManager.getInstance().formate(type.getUnit()));
 
             ps.setInt(7, type.getGUIPosition());
             ps.setInt(8, type.getValidity());

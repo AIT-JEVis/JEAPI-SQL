@@ -286,11 +286,14 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public List<JEVisObject> getObjects(JEVisClass jevisClass, boolean inherits) throws JEVisException {
+        System.out.println("getObjects: " + jevisClass);
 //        System.out.println("getObject by class: " + jevisClass.getName() + " heirs: " + inherits);
         List<JEVisClass> classes = new ArrayList<JEVisClass>();
         classes.add(jevisClass);
         if (inherits) {
-            classes.addAll(jevisClass.getHeirs());
+            if (jevisClass.getHeirs() != null) {
+                classes.addAll(jevisClass.getHeirs());
+            }
         }
 
         List<JEVisObject> objs = getObjectTable().getObjects(classes);
