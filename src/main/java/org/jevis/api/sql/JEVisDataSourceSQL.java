@@ -63,7 +63,9 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private RelationshipTable _rt;
     private ClassRelationTable _crt;
     private int qCount = 0;//for benchmarking
-    private JEVisInfo _info = new JEVisInfo() {
+    private boolean ssl = false;
+
+    final private JEVisInfo _info = new JEVisInfo() {
 
         @Override
         public String getVersion() {
@@ -77,14 +79,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     };
 
     /**
-     *
-     * @param db
+     * @deprecated @param db
      * @param port
      * @param schema
      * @param user
      * @param pw
-     * @param jevisUser
-     * @param jevisPW
+     * @param jevisUser not is use anymore
+     * @param jevisPW not is use anymore
      * @throws JEVisException
      */
     public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw, String jevisUser, String jevisPW) throws JEVisException {
@@ -95,7 +96,33 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         _dbSchema = schema;
         _jevisUsername = jevisUser;
         _jevisUserPW = jevisPW;
-//        getConnection();
+    }
+
+    /**
+     * Enable or disable the use of SSL. Do this befor using the connect()
+     * function. SSL is disabled per default.
+     *
+     * @param enable
+     */
+    public void enableSSL(boolean enable) {
+        ssl = enable;
+    }
+
+    /**
+     *
+     * @param db
+     * @param port
+     * @param schema
+     * @param user
+     * @param pw
+     * @throws JEVisException
+     */
+    public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw) throws JEVisException {
+        _dbHost = db;
+        _dbPort = port;
+        _dbUser = user;
+        _dbPW = pw;
+        _dbSchema = schema;
     }
 
     @Override
@@ -120,25 +147,24 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _user;
     }
 
+    /**
+     *
+     * @return
+     */
     public boolean connectToDB() {
         try {
             Class.forName("com.mysql.jdbc.Driver");
-//
-//            _connect = DriverManager
-//                    .getConnection("jdbc:mysql://" + _dbHost +":"+_dbPort+ "/" + _dbSchema + "?"
-//                    + "user=" + _dbUser + "&password=" + _dbPW + "&serverTimezone=UTC" + "&useGmtMillisForDatetimes=true"
-//                    + "&useJDBCCompliantTimezoneShift=true" + "&useLegacyDate‌timeCode=false");
 
             String conSring = "jdbc:mysql://" + _dbHost + ":" + _dbPort + "/" + _dbSchema + "?"
                     + "user=" + _dbUser + "&password=" + _dbPW;
+            if (ssl) {
+                conSring += "&verifyServerCertificate=false&requireSSL=true&useSSL=true";
+            }
+
             logger.info("Using Connection string: {}", conSring);
             DriverManager.setLoginTimeout(10);
             _connect = DriverManager.getConnection(conSring);
-            if (_connect.isValid(2000)) {
-                return true;
-            } else {
-                return false;
-            }
+            return _connect.isValid(2000);
 
         } catch (Exception ex) {
             logger.error("Error while connecting to DB: {}", ex.getMessage());

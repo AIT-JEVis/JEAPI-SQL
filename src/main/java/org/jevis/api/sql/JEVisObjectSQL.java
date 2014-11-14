@@ -221,9 +221,14 @@ public class JEVisObjectSQL implements JEVisObject {
 
         for (JEVisObject obj : getChildren()) {
 
+            //TODo jc: Organization obj: Monitored Object Directory
             for (JEVisClass jc : classes) {
-                if (obj.getJEVisClass().equals(jclass)) {
+//                System.out.print("object: " + obj.getName() + " jc: " + jc.getName() + "= obj: " + obj.getJEVisClass().getName());
+                if (obj.getJEVisClass().equals(jc)) {
+//                    System.out.println("\n   add Child: " + obj.getName());
                     chFromType.add(obj);
+                } else {
+//                    System.out.println(" !!! is not");
                 }
 
             }
@@ -231,6 +236,7 @@ public class JEVisObjectSQL implements JEVisObject {
 
         Collections.sort(chFromType);
 
+//        System.out.println("getChildren returns " + chFromType.size());
         return chFromType;
     }
 
@@ -396,38 +402,66 @@ public class JEVisObjectSQL implements JEVisObject {
     public JEVisObject buildObject(String name, JEVisClass jclass) throws JEVisException {
         System.out.println("buildObject: " + name + " | " + jclass);
 
-        //TODO: is this nessasary now?
-        if (getJEVisClass().equals(CommonClasses.LINK.NAME)) {
-            throw new JEVisException("Can not create an object under an Link", 85393);
-        }
-
+        //TODO: is this still nessasary?
+//        if (getJEVisClass().getName().equals(CommonClasses.LINK.NAME)) {
+//            throw new JEVisException("Can not create an object under an Link", 85393);
+//        }
         System.out.println("Can create: " + RelationsManagment.canCreate(_ds.getCurrentUser(), this));
         if (RelationsManagment.canCreate(_ds.getCurrentUser(), this)) {
 
-            if (jclass.isAllowedUnder(getJEVisClass())) {
-
+            if (canCreateHere(jclass)) {
                 //User is spezial case and can only be once in the system with the same name
                 if (jclass.getName().equals(JEVisConstants.Class.USER)) {
                     if (!_ds.getObjectTable().isUserUnique(name)) {
                         throw new JEVisException("Can not create User with this name. The User has to be unique on the System", 85392);
                     }
                 }
+                System.out.println("insert");
+                return insert(name, jclass);
 
-                //check if class is unique               
-                if (jclass.isUnique()) {
-
-                    List<JEVisObject> brother = getChildren(this.getJEVisClass(), true);
-                    if (brother.size() > 0) {
-                        throw new JEVisException(jclass.getName() + " has to be unique under parent", 23423954);
-                    } else {
-                        return insert(name, jclass);
-                    }
-                } else {
-                    return insert(name, jclass);
-                }
             } else {
-                throw new JEVisException(jclass.getName() + " is not allowed under " + getJEVisClass().getName(), 23423955);
+                throw new JEVisException(jclass.getName() + " has to be unique under this parent", 23423954);
             }
+
+//            if (jclass.isAllowedUnder(getJEVisClass())) {
+//
+//                //User is spezial case and can only be once in the system with the same name
+//                if (jclass.getName().equals(JEVisConstants.Class.USER)) {
+//                    if (!_ds.getObjectTable().isUserUnique(name)) {
+//                        throw new JEVisException("Can not create User with this name. The User has to be unique on the System", 85392);
+//                    }
+//                }
+//
+//                //check if class is unique, it should be posible to create an unique class under an parent from the class
+//                //This should only be posible for folders?!
+//                if (jclass.isUnique()) {
+//                    System.out.println("Class is unique");
+//
+//                    //we allow the same classes unter the same parent for a better organizsation
+//                    //TODO: maybe this setting should be an additonal option for the JEVisClasses
+//                    if (jclass.equals(getJEVisClass())) {
+//                        System.out.println("Parent is from the same classs");
+//                        System.out.println("Parent is same class, allow grouping ");
+//                        System.out.println("insert1");
+//                        return insert(name, jclass);
+//                    }
+//
+//                    List<JEVisObject> brother = getChildren(jclass, true);
+//
+//                    if (brother.size() > 0) {
+//
+//                        throw new JEVisException(jclass.getName() + " has to be unique under parent", 23423954);
+//                    } else {
+//                        System.out.println("insert2");
+//                        return insert(name, jclass);
+//                    }
+//                } else {
+//                    System.out.println("insert3");
+//                    return insert(name, jclass);
+//                }
+//            } else {
+//                throw new JEVisException(jclass.getName() + " is not allowed under " + getJEVisClass().getName(), 23423955);
+//            }
         } else {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
@@ -666,15 +700,50 @@ public class JEVisObjectSQL implements JEVisObject {
 //        }
 
         for (JEVisClassRelationship rel : getJEVisClass().getRelationships(JEVisConstants.ClassRelationship.OK_PARENT, JEVisConstants.Direction.FORWARD)) {
-            System.out.println("isAllowedUnder: " + rel);
-            System.out.println("Rel End: " + rel.getEnd());
+//            System.out.println("isAllowedUnder: " + rel);
+//            System.out.println("Rel End: " + rel.getEnd());
             if (rel.getEnd().equals(otherObject.getJEVisClass())) {
-                System.out.println("is Allowed");
+//                System.out.println("is Allowed");
                 return true;
 
             }
         }
         return false;
+    }
+
+    /**
+     * Check if the given class is allowed to create here taking into count the
+     * unique rule
+     *
+     * @param jclass
+     * @return
+     * @throws JEVisException
+     */
+    private boolean canCreateHere(JEVisClass jclass) throws JEVisException {
+        for (JEVisClass aclass : getAllAllowedChildrenClasses()) {
+            if (aclass.equals(jclass)) {
+                if (jclass.isUnique()) {
+
+                    //we allow the same classes unter the same parent for a better organizsation
+                    //TODO: maybe this setting should be an additonal option for the JEVisClasses
+                    if (jclass.equals(getJEVisClass())) {
+                        return true;
+                    }
+
+                    List<JEVisObject> brother = getChildren(jclass, true);
+
+                    if (brother.size() > 0) {
+                        return false;
+                    } else {
+                        return true;
+                    }
+                } else {
+                    return true;
+                }
+            }
+        }
+        return false;
+
     }
 
     @Override
@@ -725,37 +794,56 @@ public class JEVisObjectSQL implements JEVisObject {
         return getName().compareTo(o.getName());
     }
 
-    @Override
-    public List<JEVisClass> getAllowedChildrenClasses() throws JEVisException {
-//        System.out.println("getAllowedChildrenClasses() for " + getName());
-
+    private List<JEVisClass> getAllAllowedChildrenClasses() throws JEVisException {
         List<JEVisClassRelationship> rels = getJEVisClass().getRelationships(
                 JEVisConstants.ClassRelationship.OK_PARENT,
                 JEVisConstants.Direction.BACKWARD);
         List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
         for (JEVisClassRelationship rel : rels) {
             JEVisClass isAllowedClass = rel.getOtherClass(getJEVisClass());
-//            System.out.println("OK child = " + isAllowedClass);
-            okClasses.add(isAllowedClass);
 
-            okClasses.addAll(getHeiredClasses(isAllowedClass));
+            if (!okClasses.contains(isAllowedClass)) {
 
-//            if (getName().equals("Kühlschrank")) {
-//                for (JEVisClassRelationship krel : rel.getOtherClass(getJEVisClass()).getRelationships()) {
-//                    System.out.println("hmm : " + krel);
-//                }
-//            }
-            //get the heir also
-//            List<JEVisClassRelationship> heirs = isAllowedClass.getRelationships(
-//                    JEVisConstants.ClassRelationship.INHERIT, JEVisConstants.Direction.BACKWARD);
-//            for (JEVisClassRelationship rel2 : heirs) {
-//                System.out.println("    Inherit: " + rel2);
-//                System.out.println("    other:   " + rel2.getOtherClass(isAllowedClass));
-//                okClasses.add(rel2.getOtherClass(isAllowedClass));
-//            }
+                okClasses.add(isAllowedClass);
+                List<JEVisClass> heirclasses = isAllowedClass.getHeirs();
+                for (JEVisClass heirClass : heirclasses) {
+                    if (!okClasses.contains(heirClass)) {
+                        okClasses.add(heirClass);
+                    }
+                }
+
+            }
+
+//            okClasses.addAll(getHeiredClasses(isAllowedClass));
         }
 
         return okClasses;
+    }
+
+    @Override
+    public List<JEVisClass> getAllowedChildrenClasses() throws JEVisException {
+        List<JEVisClass> allowedClasses = new ArrayList<JEVisClass>();
+        List<JEVisClass> allclasses = getAllAllowedChildrenClasses();
+        for (JEVisClass jclass : allclasses) {
+            if (canCreateHere(jclass)) {
+                allowedClasses.add(jclass);
+            }
+        }
+        return allowedClasses;
+
+//        System.out.println("getAllowedChildrenClasses() for " + getName());
+//        List<JEVisClassRelationship> rels = getJEVisClass().getRelationships(
+//                JEVisConstants.ClassRelationship.OK_PARENT,
+//                JEVisConstants.Direction.BACKWARD);
+//        List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
+//        for (JEVisClassRelationship rel : rels) {
+//            JEVisClass isAllowedClass = rel.getOtherClass(getJEVisClass());
+//
+//            okClasses.add(isAllowedClass);
+//            okClasses.addAll(getHeiredClasses(isAllowedClass));
+//
+//        }
+//        return okClasses;
     }
 
     List<JEVisClass> getHeiredClasses(JEVisClass original) throws JEVisException {
