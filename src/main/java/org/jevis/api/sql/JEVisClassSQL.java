@@ -188,11 +188,20 @@ public class JEVisClassSQL implements JEVisClass {
         if (getClass() != obj.getClass()) {
             return false;
         }
-        final JEVisClassSQL other = (JEVisClassSQL) obj;
-        if ((this._name == null) ? (other._name != null) : !this._name.equals(other._name)) {
+
+        try {
+            final JEVisClass other = (JEVisClass) obj;
+
+            return other.getName().equals(getName());
+        } catch (JEVisException ex) {
             return false;
         }
-        return true;
+
+//        final JEVisClassSQL other = (JEVisClassSQL) obj;
+//        if ((this._name == null) ? (other._name != null) : !this._name.equals(other._name)) {
+//            return false;
+//        }
+//        return true;
     }
 
     @Override
