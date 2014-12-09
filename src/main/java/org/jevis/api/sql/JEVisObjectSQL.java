@@ -118,7 +118,8 @@ public class JEVisObjectSQL implements JEVisObject {
         //disabled the cach will be slower but faster
 //        if (_parentObjs == null) {
         _parentObjs = new LinkedList<JEVisObject>();
-        for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT, JEVisConstants.Direction.BACKWARD)) {
+        for (JEVisRelationship rel : getRelationships(JEVisConstants.ObjectRelationship.PARENT, JEVisConstants.Direction.FORWARD)) {
+//            System.out.println("Is parent?: " + rel);
             //find the relationshipts where we are the child
             if (rel.getStartObject().getID() == _id) {
                 if (RelationsManagment.canRead(_ds.getCurrentUser(), rel.getEndObject())) {
@@ -357,6 +358,7 @@ public class JEVisObjectSQL implements JEVisObject {
     }
 
     public void moveTo(JEVisObject newParent) throws JEVisException {
+
         //TODO remimplement after Relationship changes
 //
 //        //check if the user has the right on both object
@@ -615,6 +617,9 @@ public class JEVisObjectSQL implements JEVisObject {
 
         _relationships.add(newRel);
 
+        JEVisObjectSQL other = (JEVisObjectSQL) obj;//TODo replace by an saver code
+        other._relationships.add(newRel);
+
         //TODO: Simple cache cleaning, redo
         if (newRel.getType() == JEVisConstants.ObjectRelationship.PARENT) {
             _childrenObj = null;
@@ -651,6 +656,8 @@ public class JEVisObjectSQL implements JEVisObject {
         System.out.println("can delete relationship: " + rel);
         System.out.println("this object: " + _id);
 
+        JEVisObjectSQL otherObject = (JEVisObjectSQL) rel.getOtherObject(this);
+
         boolean isOK = false;
         for (JEVisRelationship orgRel : _relationships) {
             if (orgRel.equals(rel)) {
@@ -658,16 +665,21 @@ public class JEVisObjectSQL implements JEVisObject {
                 break;
             }
         }
+
         if (isOK) {
             if (!_ds.getRelationshipTable().delete(rel)) {
                 throw new JEVisException("Could not delete Relationship", 342385);
             } else {
                 System.out.println("delete done");
                 _relationships.remove(rel);
-////
-////                if (rel.isType(JEVisConstants.ObjectRelationship.PARENT)) {
-////                    dsf
-////                }
+
+                otherObject._relationships.remove(rel);
+
+                if (rel.isType(JEVisConstants.ObjectRelationship.PARENT)) {
+                    JEVisObjectSQL oldParent = (JEVisObjectSQL) rel.getOtherObject(this);
+
+                    oldParent.getChildren().remove(this);
+                }
             }
         } else {
             throw new JEVisException("This relationship does not belong to this object", 689355);
@@ -777,7 +789,7 @@ public class JEVisObjectSQL implements JEVisObject {
                 }
             } catch (Exception ex) {
                 //TODO: handel this excetption, most likly there is an error in the api
-                System.out.println("getRelationships(int,int).error: " + ex);
+                System.out.println("getRelationships(" + type + "," + direction + ").error: " + ex);
             }
         }
         return tmp;
