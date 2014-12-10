@@ -257,6 +257,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     public boolean deleteSamplesBetween(DateTime from, DateTime to) throws JEVisException {
         if (RelationsManagment.canDelete(_ds.getCurrentUser(), _object)) {
             SampleTable st = new SampleTable(_ds);
+            //TODO: update samplecound.
             return st.deleteSamples(this, from, to);
         } else {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);

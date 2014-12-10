@@ -162,12 +162,10 @@ public class SampleTable {
                     ps.setString(++p, sample.getValue().toString());
                 }
 
-
 //                ps.setString(++p, sample.getManipulation().toString());
                 ps.setNull(++p, Types.INTEGER);
                 ps.setString(++p, sample.getNote());
                 ps.setTimestamp(++p, new Timestamp(now));
-
 
                 if (sample.getAttribute().getPrimitiveType() == JEVisConstants.PrimitiveType.FILE) {
 //                    System.out.println("Filename: "+sample.getValueAsFile().getFilename());
@@ -182,7 +180,6 @@ public class SampleTable {
                 }
             }
             //System.out.println("SamplDB.putSample SQL: \n" + ps);
-
 
             count = ps.executeUpdate();
             if (count > 0) {
@@ -210,7 +207,6 @@ public class SampleTable {
                 + " where " + COLUMN_OBJECT + "=?"
                 + " and " + COLUMN_ATTRIBUTE + "=?";
 
-
         if (from != null) {
             sql += " and " + COLUMN_TIMESTAMP + ">=?";
         }
@@ -234,7 +230,6 @@ public class SampleTable {
             if (until != null) {
                 ps.setTimestamp(pos++, new Timestamp(until.getMillis()));
             }
-
 
             System.out.println("SQL: " + ps);
             ResultSet rs = ps.executeQuery();
@@ -269,6 +264,8 @@ public class SampleTable {
             ps.setLong(2, att.getObject().getID());
 
             if (ps.executeUpdate() > 0) {
+                AttributeTable at = new AttributeTable(_ds);
+                at.updateAttributeTS(att);
                 return true;
             } else {
                 return false;
@@ -304,6 +301,8 @@ public class SampleTable {
             ps.setTimestamp(4, new Timestamp(until.getMillis()));
 
             if (ps.executeUpdate() > 0) {
+                AttributeTable at = new AttributeTable(_ds);
+                at.updateAttributeTS(att);
                 return true;
             } else {
                 return false;
@@ -329,7 +328,6 @@ public class SampleTable {
                 + " where " + COLUMN_OBJECT + "=?"
                 + " and " + COLUMN_ATTRIBUTE + "=?"
                 + " order by " + COLUMN_TIMESTAMP;
-
 
         PreparedStatement ps = _connection.prepareStatement(sql);
         ps.setLong(1, att.getObject().getID());
@@ -357,7 +355,6 @@ public class SampleTable {
 //        System.out.println("Lasts: "+att.getTimestampFromLastSample());
 //        System.out.println("Lasts: "+att.getTimestampFromLastSample().getMillis());
 //        System.out.println("Lasts: "+(new Timestamp(att.getTimestampFromLastSample().getMillis())));
-
         PreparedStatement ps = _connection.prepareStatement(sql);
         ps.setLong(1, att.getObject().getID());
         ps.setString(2, att.getName());
