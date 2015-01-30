@@ -120,6 +120,12 @@ public class ObjectTable {
         }
     }
 
+    /**
+     *
+     * @param classes
+     * @return
+     * @throws JEVisException
+     */
     public List<JEVisObject> getObjects(List<JEVisClass> classes) throws JEVisException {
         String sql = "select " + TABLE + ".*"
                 + "," + RelationshipTable.TABLE + ".*"

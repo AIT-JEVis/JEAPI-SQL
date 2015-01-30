@@ -24,10 +24,8 @@ import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import javax.measure.converter.UnitConverter;
 import javax.measure.unit.Unit;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
@@ -186,21 +184,25 @@ public class JEVisSampleSQL implements JEVisSample {
     }
 
     @Override
-    public Long getValueAsLong(Unit unit) throws JEVisException {
-        Number convNumber = getUnit().getConverterTo(unit).convert(getValueAsLong());
-        return convNumber.longValue();
+    public Long getValueAsLong(JEVisUnit unit) throws JEVisException {
+        Double d = getUnit().converteTo(unit, getValueAsLong());//TODO we may need an funtion for Long adn Int
+        return d.longValue();
+//        Number convNumber = getUnit().getConverterTo(unit).convert(getValueAsLong());
+//        return convNumber.longValue();
 
     }
 
     @Override
-    public Double getValueAsDouble(Unit unit) throws JEVisException {
-        Double value = getValueAsDouble();
-        return unit.getConverterTo(getUnit()).convert(value);
+    public Double getValueAsDouble(JEVisUnit unit) throws JEVisException {
+//        System.out.println("getValueAsDouble: from: " + getUnit() + "  to: " + unit);
+        return getUnit().converteTo(unit, getValueAsDouble());
+//        Double value = getValueAsDouble();
+//        return unit.getConverterTo(getUnit()).convert(value);
     }
 
     @Override
-    public Unit getUnit() throws JEVisException {
-        return getAttribute().getUnit();
+    public JEVisUnit getUnit() throws JEVisException {
+        return getAttribute().getInputUnit();
     }
 
     @Override
@@ -331,12 +333,13 @@ public class JEVisSampleSQL implements JEVisSample {
     }
 
     @Override
-    public void setValue(Object value, Unit unit) throws JEVisException {
+    public void setValue(Object value, JEVisUnit unit) throws JEVisException {
         if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.DOUBLE) {
-            _tvalue = unit.getConverterTo(getUnit()).convert((Double) value);
+            _tvalue = unit.converteTo(getUnit(), (Double) value);
         } else if (getAttribute().getPrimitiveType() != JEVisConstants.PrimitiveType.LONG) {
-            Number tmp = unit.getConverterTo(getUnit()).convert((Long) value);
-            _tvalue = tmp.longValue();
+            _tvalue = unit.converteTo(getUnit(), (Double) value);
+//            Number tmp = unit.getConverterTo(getUnit()).convert((Long) value);
+//            _tvalue = tmp.longValue();
         } else {
             _tvalue = value;
             logger.warn("Error the primitive type of this Type is not MultiSelection ");

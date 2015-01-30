@@ -22,7 +22,6 @@ package org.jevis.api.sql;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
-import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -31,11 +30,9 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
-import java.util.TimeZone;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisException;
-import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisSample;
 import org.joda.time.DateTime;
 
@@ -231,7 +228,7 @@ public class SampleTable {
                 ps.setTimestamp(pos++, new Timestamp(until.getMillis()));
             }
 
-            System.out.println("SQL: " + ps);
+//            System.out.println("SQL: " + ps);
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
@@ -346,10 +343,16 @@ public class SampleTable {
         JEVisSample sample = null;
 //        System.out.println("SampleTable.getLatest");
 
+//        String sql2 = "select * from " + TABLE
+//                + " where " + COLUMN_OBJECT + "=?"
+//                + " and " + COLUMN_ATTRIBUTE + "=?"
+//                + " and " + COLUMN_TIMESTAMP + "=?"
+//                + " limit 1";
+        //TODO: could be replaces by the old lastts information in the Attribute if its working reliable
         String sql = "select * from " + TABLE
                 + " where " + COLUMN_OBJECT + "=?"
                 + " and " + COLUMN_ATTRIBUTE + "=?"
-                + " and " + COLUMN_TIMESTAMP + "=?"
+                + " order by " + COLUMN_TIMESTAMP + " DESC"
                 + " limit 1";
 
 //        System.out.println("Lasts: "+att.getTimestampFromLastSample());
@@ -358,7 +361,8 @@ public class SampleTable {
         PreparedStatement ps = _connection.prepareStatement(sql);
         ps.setLong(1, att.getObject().getID());
         ps.setString(2, att.getName());
-        ps.setTimestamp(3, new Timestamp(att.getTimestampFromLastSample().getMillis()));
+//        ps.setTimestamp(3, new Timestamp(att.getTimestampFromLastSample().getMillis()));
+
 //        System.out.println("SQL: "+ps);
         ResultSet rs = ps.executeQuery();
 

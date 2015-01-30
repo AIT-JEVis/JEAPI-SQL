@@ -19,11 +19,15 @@
  */
 package org.jevis.api.sql;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.measure.unit.Unit;
+import javax.measure.unit.UnitFormat;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisDataSource;
@@ -32,6 +36,9 @@ import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisSample;
 import org.jevis.api.JEVisType;
+import org.jevis.api.JEVisUnit;
+import org.jevis.commons.json.JsonUnit;
+import org.jevis.commons.unit.JEVisUnitImp;
 import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
@@ -51,8 +58,15 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private Period _period;
     private long _sampleCount;
     private JEVisDataSourceSQL _ds;
-    private Unit _unit;
-    private String _altSymbol;
+    private boolean _hasChanged = false;
+//    private JEVisUnit _unit;
+//    private String _unitString = "";
+//    private String _altSymbol;
+
+    private Period _inputRate = Period.ZERO;
+    private Period _displayRate = Period.ZERO;
+    private JEVisUnit _inputUnit = new JEVisUnitImp(Unit.ONE);
+    private JEVisUnit _displayUnit = new JEVisUnitImp(Unit.ONE);
 
     public JEVisAttributeSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
@@ -74,28 +88,32 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 _minTS = null;
             }
 
-            if (rs.getString(AttributeTable.COLUMN_PERIOD) != null && !rs.getString(AttributeTable.COLUMN_PERIOD).isEmpty()) {
-
-                PeriodFormatter format = ISOPeriodFormat.standard();
-                _period = format.parsePeriod(rs.getString(AttributeTable.COLUMN_PERIOD));
+            PeriodFormatter format = ISOPeriodFormat.standard();
+            if (rs.getString(AttributeTable.COLUMN_INPUT_RATE) != null && !rs.getString(AttributeTable.COLUMN_INPUT_RATE).isEmpty()) {
+                _inputRate = format.parsePeriod(rs.getString(AttributeTable.COLUMN_INPUT_RATE));
+            }
+            if (rs.getString(AttributeTable.COLUMN_DISPLAY_RATE) != null && !rs.getString(AttributeTable.COLUMN_DISPLAY_RATE).isEmpty()) {
+                _displayRate = format.parsePeriod(rs.getString(AttributeTable.COLUMN_DISPLAY_RATE));
             }
 
-            _altSymbol = rs.getString(AttributeTable.COLUMN_ALT_SYMBOL);
-            try {
-//                System.out.println("DB unit: " + rs.getString(AttributeTable.COLUMN_UNIT));
-                if (rs.getString(AttributeTable.COLUMN_UNIT) != null
-                        && !rs.getString(AttributeTable.COLUMN_UNIT).isEmpty()) {
-                    _unit = Unit.valueOf(rs.getString(AttributeTable.COLUMN_UNIT));
-                } else {
-                    _unit = Unit.ONE;
+            if (rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT) != null && !rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT).isEmpty()) {
+                try {
+                    _displayUnit = new JEVisUnitImp(new Gson().fromJson(rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT), JsonUnit.class));
+                } catch (Exception ex) {
+                    System.out.println("could not parse display unit because: " + ex);
+                    System.out.println("UnitString: '" + rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT) + "'");
                 }
-            } catch (IllegalArgumentException ex) {
-                System.out.println("could not parse Unit: " + rs.getString(AttributeTable.COLUMN_UNIT));
-//                ex.printStackTrace();
-                _unit = Unit.ONE;
             }
 
-            //TODO add group
+            if (rs.getString(AttributeTable.COLUMN_INPUT_UNIT) != null && !rs.getString(AttributeTable.COLUMN_INPUT_UNIT).isEmpty()) {
+                try {
+                    _inputUnit = new JEVisUnitImp(new Gson().fromJson(rs.getString(AttributeTable.COLUMN_INPUT_UNIT), JsonUnit.class));
+                } catch (Exception ex) {
+                    System.out.println("could not parse input unit because: " + ex);
+                    System.out.println("UnitString: '" + rs.getString(AttributeTable.COLUMN_INPUT_UNIT) + "'");
+                }
+            }
+
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
@@ -186,7 +204,18 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         return _sampleCount;
     }
 
-    protected void commit() throws JEVisException {
+    @Override
+    public void rollBack() throws JEVisException {
+        throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+    }
+
+    @Override
+    public boolean hasChanged() {
+        return _hasChanged = true;
+    }
+
+    @Override
+    public void commit() throws JEVisException {
         _ds.getAttributeTable().updateAttributeTS(this);
         List<JEVisAttribute> atts = _ds.getAttributeTable().getAttributes(_object);
         for (JEVisAttribute att : atts) {
@@ -205,9 +234,11 @@ public class JEVisAttributeSQL implements JEVisAttribute {
             SampleTable st = new SampleTable(_ds);
             JEVisSample sample = st.getLatest(this);
             return sample;
+        } catch (NullPointerException ne) {
+            return null;//TODO return NUll-Object?
         } catch (Exception ex) {
             System.out.println("error while resiving samples: " + ex);
-            return null;//TODO return emty Sample?
+            return null;//TODO return NUll-Object?
         }
     }
 
@@ -265,31 +296,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     }
 
     @Override
-    public Unit getUnit() throws JEVisException {
-        if (_unit != null) {
-            return _unit;
-        }
-
-        //return default
-        return getType().getUnit();
-    }
-
-    @Override
-    public void setUnit(Unit unit) {
-        //TODO check if its allowed to set the unit of the attribute
-
-        _unit = unit;
-
-    }
-
-    @Override
     public JEVisDataSource getDataSource() {
         return _ds;
-    }
-
-    @Override
-    public Period getPeriod() {
-        return _period;
     }
 
     @Override
@@ -331,6 +339,16 @@ public class JEVisAttributeSQL implements JEVisAttribute {
             return false;
         }
 
+    }
+
+    @Override
+    public JEVisSample buildSample(DateTime ts, double value, JEVisUnit unit) throws JEVisException {
+        return buildSample(ts, value, "", unit);
+    }
+
+    @Override
+    public JEVisSample buildSample(DateTime ts, double value, String note, JEVisUnit unit) throws JEVisException {
+        return buildSample(ts, getInputUnit().converteTo(unit, value), note);
     }
 
     //TODO will this replace the other 
@@ -404,17 +422,52 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         }
     }
 
-    @Override
-    public String getAlternativSymbol() throws JEVisException {
-        return _altSymbol;
-    }
-
-    @Override
-    public void setAlternativSymbol(String symbol) throws JEVisException {
-        _altSymbol = symbol;
-    }
-
     protected void increasedCount() {
         _sampleCount++;
     }
+
+    @Override
+    public JEVisUnit getDisplayUnit() throws JEVisException {
+        return _displayUnit;
+    }
+
+    @Override
+    public void setDisplayUnit(JEVisUnit unit) throws JEVisException {
+        _hasChanged = true;
+        _displayUnit = unit;
+    }
+
+    @Override
+    public JEVisUnit getInputUnit() throws JEVisException {
+        return _inputUnit;
+    }
+
+    @Override
+    public void setInputUnit(JEVisUnit unit) throws JEVisException {
+        _hasChanged = true;
+        _inputUnit = unit;
+    }
+
+    @Override
+    public Period getDisplaySampleRate() {
+        return _displayRate;
+    }
+
+    @Override
+    public Period getInputSampleRate() {
+        return _inputRate;
+    }
+
+    @Override
+    public void setInputSampleRate(Period period) {
+        _hasChanged = true;
+        _inputRate = period;
+    }
+
+    @Override
+    public void setDisplaySampleRate(Period period) {
+        _hasChanged = true;
+        _displayRate = period;
+    }
+
 }

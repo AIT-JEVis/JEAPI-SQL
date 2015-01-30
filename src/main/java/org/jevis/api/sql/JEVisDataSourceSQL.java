@@ -24,6 +24,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -35,6 +36,8 @@ import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisInfo;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
+import org.jevis.api.JEVisUnit;
+import org.jevis.commons.unit.JEVisUnitImp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -162,7 +165,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             }
 
             logger.info("Using Connection string: {}", conSring);
-            DriverManager.setLoginTimeout(10);
+            DriverManager.setLoginTimeout(20);
             _connect = DriverManager.getConnection(conSring);
             return _connect.isValid(2000);
 
@@ -314,8 +317,10 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public List<JEVisObject> getObjects(JEVisClass jevisClass, boolean inherits) throws JEVisException {
-        System.out.println("getObjects: " + jevisClass);
+//        System.out.println("getObjects: " + jevisClass);
 //        System.out.println("getObject by class: " + jevisClass.getName() + " heirs: " + inherits);
+
+        getCount();
         List<JEVisClass> classes = new ArrayList<JEVisClass>();
         classes.add(jevisClass);
         if (inherits) {
@@ -325,9 +330,43 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
 
         List<JEVisObject> objs = getObjectTable().getObjects(classes);
-        Collections.sort(objs);
+        List<JEVisObject> returnObjs = new ArrayList<JEVisObject>();
 
-        return objs;
+        //TODO: maybe its better to check this in the sql query?
+        //Check if the user has permission
+        Date startD = new Date();
+
+        List<JEVisObject> userGourps = new ArrayList<JEVisObject>();
+        for (JEVisRelationship rel : getCurrentUser().getRelationships(JEVisConstants.ObjectRelationship.MEMBER_READ, JEVisConstants.Direction.FORWARD)) {
+//            System.out.println("User is meber in group: " + rel.getOtherObject(getCurrentUser()).getID());
+            userGourps.add(rel.getOtherObject(getCurrentUser()));
+        }
+
+        for (JEVisObject obj : objs) {
+            for (JEVisRelationship rel : obj.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
+//                System.out.println("GetObject.rel: " + rel);
+                for (JEVisObject group : userGourps) {
+//                    System.out.println("Compare: " + group.getID() + " to " + rel.getEndObject().getID());
+                    if (group.getID().equals(rel.getEndObject().getID())) {
+//                        System.out.println("Is readable: " + rel);
+                        if (!returnObjs.contains(rel.getStartObject())) {
+                            returnObjs.add(obj);
+                        }
+
+                    } else {
+//                        System.out.println("--->knot");
+                    }
+                }
+
+            }
+        }
+        Date nowD = new Date();
+        System.out.println("time for userright check: " + (nowD.getTime() - startD.getTime()) + " ms and " + getCount());
+
+//        Collections.sort(objs);
+        Collections.sort(returnObjs);
+
+        return returnObjs;
     }
 
     protected ObjectTable getObjectTable() throws JEVisException {
@@ -424,6 +463,16 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             java.util.logging.Logger.getLogger(JEVisDataSourceSQL.class.getName()).log(Level.SEVERE, null, ex);
             return false;
         }
+    }
+
+    @Override
+    public List<JEVisUnit> getUnits() {
+        List<JEVisUnit> units = new ArrayList<JEVisUnit>();
+
+        units.add(new JEVisUnitImp("(1000*W)*h", "kWh", JEVisUnit.Prefix.NONE));
+//        units.add(new JEVisUnitImp("(#*W)*h", "#Wh"));
+
+        return units;
     }
 
 }

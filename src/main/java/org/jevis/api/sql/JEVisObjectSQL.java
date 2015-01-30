@@ -40,12 +40,12 @@ import org.jevis.api.JEVisType;
 import static org.jevis.api.sql.ObjectTable.COLUMN_ID;
 import static org.jevis.api.sql.ObjectTable.COLUMN_NAME;
 import static org.jevis.api.sql.ObjectTable.COLUMN_CLASS;
-import org.jevis.commons.CommonClasses;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * MySQL implementation of the JEVisObject.
  *
  * @author Florian Simon<florian.simon@openjevis.org>
  */
@@ -54,7 +54,6 @@ public class JEVisObjectSQL implements JEVisObject {
     private boolean _hasChanged = false;
     private String _name;
     private long _id;
-    private long _parentID;
     private List<JEVisObject> _parentObjs;
     private String _class;
     private long _groupID;
@@ -144,7 +143,7 @@ public class JEVisObjectSQL implements JEVisObject {
 
                     _childrenObj.add(rel.getStartObject());
                 } else {
-                    System.out.println("Has NO access to: " + rel.getStartObject());
+//                    System.out.println("Has NO access to: " + rel.getStartObject());
                 }
 
             }
@@ -570,15 +569,20 @@ public class JEVisObjectSQL implements JEVisObject {
     @Override
     public void commit() throws JEVisException {
         if (_hasChanged) {
-            //User is spezial case and can only be once in the system with the same name
-            if (getJEVisClass().getName().equals(JEVisConstants.Class.USER)) {
-                if (!_ds.getObjectTable().isUserUnique(_name)) {
-                    throw new JEVisException("Can not create User with this name. The User has to be unique on the System", 85392);
+            if (RelationsManagment.canWrite(_ds.getCurrentUser(), this)) {
+                //User is spezial case and can only be once in the system with the same name
+                if (getJEVisClass().getName().equals(JEVisConstants.Class.USER)) {
+                    if (!_ds.getObjectTable().isUserUnique(_name)) {
+                        throw new JEVisException("Can not create User with this name. The User has to be unique on the System", 85392);
+                    }
                 }
+
+                _ds.getObjectTable().updateObject(this);
+                _hasChanged = false;
+            } else {
+                throw new JEVisException("User has no write right", 85392);
             }
 
-            _ds.getObjectTable().updateObject(this);
-            _hasChanged = false;
         }
     }
 
@@ -630,28 +634,9 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public void deleteRelationship(JEVisRelationship rel) throws JEVisException {
-        System.out.println("\n\ndeleteRelationship: " + rel);
-        System.out.println("This: " + this);
-        System.out.println("start: " + rel.getStartObject() + "\nend: " + rel.getEndObject());
-        System.out.println("need write to: " + rel.getOtherObject(this));
 
-        //we only need the permisson for this object        
-        if (!RelationsManagment.canWrite(_ds.getCurrentUser(), this)) {
-//                || !RelationsManagment.canWrite(_ds.getCurrentUser(), rel.getOtherObject(this))) {
-            throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
-        }
-
-        //TODO i think we habe to make an additonal security check for userright relationships
-        if (rel.getType() == JEVisConstants.ObjectRelationship.OWNER
-                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_CREATE
-                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_DELETE
-                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_EXECUTE
-                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_READ
-                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_WRITE) {
-            //TODO hndel this rights
-            System.out.println("WARNING user trys to delete userright but checking is not enabled: " + rel);
-            //throw JEVisException
-        }
+        //TODO: RelationsManagment need to checkt non permission relationships
+        RelationsManagment.canDeleteRelationship(_ds.getCurrentUser(), rel);
 
         System.out.println("can delete relationship: " + rel);
         System.out.println("this object: " + _id);
@@ -685,16 +670,6 @@ public class JEVisObjectSQL implements JEVisObject {
             throw new JEVisException("This relationship does not belong to this object", 689355);
         }
 
-//        if (rel.getStartObject().getID() == _id || rel.getEndObject().getID() == _id) {
-//            System.out.println("is part of this object");
-//            if (!_ds.getRelationshipTable().delete(rel)) {
-//                throw new JEVisException("Could not delete Relationship", 342385);
-//            } else {
-//                _relationships.remove(rel);
-//            }
-//        } else {
-//            throw new JEVisException("This relationship does not belong to this object", 689355);
-//        }
     }
 
     @Override

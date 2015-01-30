@@ -43,10 +43,15 @@ public class AttributeTable {
     public final static String COLUMN_NAME = "name";
     public final static String COLUMN_MIN_TS = "mints";
     public final static String COLUMN_MAX_TS = "maxts";
-    public final static String COLUMN_PERIOD = "period";
-    public final static String COLUMN_UNIT = "unit";
+//    public final static String COLUMN_PERIOD = "period";//depricated
+//    public final static String COLUMN_UNIT = "unit";//depricated
     public final static String COLUMN_COUNT = "samplecount";
-    public final static String COLUMN_ALT_SYMBOL = "altsymbol";
+//    public final static String COLUMN_ALT_SYMBOL = "altsymbol";
+
+    public final static String COLUMN_INPUT_UNIT = "inputunit";
+    public final static String COLUMN_INPUT_RATE = "inputrate";
+    public final static String COLUMN_DISPLAY_UNIT = "displayunit";
+    public final static String COLUMN_DISPLAY_RATE = "displayrate";
 
     private final JEVisDataSourceSQL _ds;
     private final Connection _connection;
@@ -60,9 +65,9 @@ public class AttributeTable {
     //TODO: try-catch-finally
     public void insert(JEVisType type, JEVisObject obj) {
         String sql = "insert into " + TABLE
-                + "(" + COLUMN_OBJECT + "," + COLUMN_NAME + "," + COLUMN_PERIOD
-                + "," + COLUMN_UNIT + "," + COLUMN_ALT_SYMBOL
-                + ") values(?,?,?,?,?)";
+                + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
+                + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
+                + ") values(?,?,?,?,)";
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -70,9 +75,12 @@ public class AttributeTable {
 
             ps.setLong(1, obj.getID());
             ps.setString(2, type.getName());
-            ps.setString(3, "P15m");//TODO implement
-            ps.setString(4, type.getUnit().toString());
-            ps.setString(5, type.getAlternativSymbol());
+
+            String unitJSON = type.getUnit().toJSON();
+
+            //DisplayUnit
+            ps.setString(3, unitJSON);
+            ps.setString(4, unitJSON);
 
             int count = ps.executeUpdate();
 //            System.out.println("success");
@@ -126,10 +134,11 @@ public class AttributeTable {
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
         String sql = "update " + TABLE
                 + " set "
-                + COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=?, "//new
+                //+ COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=?, "//new
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"
+                + "," + COLUMN_DISPLAY_UNIT + "=?," + COLUMN_INPUT_UNIT + "=?," + COLUMN_DISPLAY_RATE + "=?," + COLUMN_INPUT_RATE + "=?"
                 + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
 
         PreparedStatement ps = null;
@@ -139,25 +148,28 @@ public class AttributeTable {
             ps = _connection.prepareStatement(sql);
 
             //unit
-            ps.setString(1, att.getAlternativSymbol());
-            ps.setString(2, att.getUnit().toString());
-
+//            ps.setString(1, att.getAlternativSymbol());
+//            ps.setString(2, att.getDisplayUnit().toString());
             //1. sub
+            ps.setLong(1, att.getObject().getID());
+            ps.setString(2, att.getName());
+
+            //2.sub
             ps.setLong(3, att.getObject().getID());
             ps.setString(4, att.getName());
 
-            //2.sub
+            //3.sub
             ps.setLong(5, att.getObject().getID());
             ps.setString(6, att.getName());
 
-            //3.sub
-            ps.setLong(7, att.getObject().getID());
-            ps.setString(8, att.getName());
+            ps.setString(7, att.getDisplayUnit().toJSON());
+            ps.setString(8, att.getInputUnit().toJSON());
+            ps.setString(9, att.getDisplaySampleRate().toString());
+            ps.setString(10, att.getInputSampleRate().toString());
 
-            //when
-            ps.setLong(9, att.getObject().getID());
-            ps.setString(10, att.getName());
-            System.out.println("update attribute: \n" + ps);
+            //where
+            ps.setLong(11, att.getObject().getID());
+            ps.setString(12, att.getName());
 
             //TODO return this??
             int count = ps.executeUpdate();

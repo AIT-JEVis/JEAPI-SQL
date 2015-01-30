@@ -20,10 +20,13 @@
 package org.jevis.api.sql;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.logging.Level;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
+import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
 import static org.jevis.api.JEVisConstants.ObjectRelationship.*;
@@ -31,10 +34,15 @@ import static org.jevis.api.JEVisConstants.Class.*;
 import static org.jevis.api.JEVisConstants.Attribute.*;
 import static org.jevis.api.JEVisConstants.ClassRelationship.*;
 import org.jevis.api.JEVisException;
+import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.commons.JEVisUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ * This class helps handeling the Relationship
+ *
+ * TODO: this class belongs into he JEAp or JECommons
  *
  * @author Florian Simon <florian.simon@envidatec.com>
  */
@@ -200,4 +208,148 @@ public class RelationsManagment {
 
         return false;
     }
+
+    private static List<JEVisObject> getObjectOwner(JEVisObject obj, int type) {
+        List<JEVisObject> owners = new ArrayList<JEVisObject>();
+
+        try {
+            for (JEVisRelationship objOwner : obj.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
+//                System.out.println("objOwner: " + objOwner);
+                try {
+                    for (JEVisRelationship groupMemeber : objOwner.getEndObject().getRelationships(type, JEVisConstants.Direction.BACKWARD)) {
+//                        System.out.println("groupMember: " + groupMemeber);
+                        owners.add(groupMemeber.getStartObject());
+                    }
+                } catch (JEVisException ex) {
+                    java.util.logging.Logger.getLogger(RelationsManagment.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        } catch (JEVisException ex) {
+            java.util.logging.Logger.getLogger(RelationsManagment.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return owners;
+
+    }
+
+    /**
+     * Checks if an membership relationship can be deleted by the current user.
+     *
+     *
+     * @param rel JEVisRealtionship from the type Membership
+     * @return true if the user can delte, thows an execption with the reason
+     * when not. returns fals if the type is not an membership
+     */
+    public static boolean canDeleteMembership(JEVisRelationship rel) {
+
+        try {
+            JEVisObject currentUser = rel.getStartObject().getDataSource().getCurrentUser();
+            JEVisUser juser = new JEVisUser(currentUser);
+            List<JEVisObject> userMembership = juser.getUserGroups();
+//            System.out.println("Usergroups: " + Arrays.toString(userMembership.toArray()));
+
+            if (rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_CREATE
+                    || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_DELETE
+                    || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_EXECUTE
+                    || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_READ
+                    || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_WRITE) {
+
+//                System.out.println("end Rel: " + rel.getEndObject());
+//                if (userMembership.contains(rel.getEndObject())) {
+//                    System.out.println("rule a63: " + rel);
+//                    return false;
+//                }
+                if (rel.getStartObject().equals(currentUser)) {
+                    throw new JEVisException("Unsifficent rights, user cannot delete its own user right", JEVisExceptionCodes.UNAUTHORIZED);
+                }
+
+                if (getObjectOwner(rel.getStartObject(), JEVisConstants.ObjectRelationship.MEMBER_DELETE).contains(currentUser)) {
+                    System.out.println("is owner-owner: " + rel);
+                    return true;
+                }
+
+            }
+        } catch (JEVisException ex) {
+            java.util.logging.Logger.getLogger(RelationsManagment.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return false;
+
+    }
+
+    public static boolean canDeleteOwnership(JEVisRelationship rel) {
+        try {
+//            System.out.println("---------------canDeleteOwnership--------------");
+//            System.out.println("rel: " + rel + " == " + rel.getStartObject().getName() + " ->  " + rel.getEndObject().getName());
+            JEVisObject currentUser = rel.getStartObject().getDataSource().getCurrentUser();
+            JEVisUser user = new JEVisUser(currentUser);
+            List<JEVisObject> userGroups = user.getUserGroups();
+//            System.out.println("My Groups: " + Arrays.toString(userGroups.toArray()));
+
+            if (rel.getType() == JEVisConstants.ObjectRelationship.OWNER) {
+
+                //get Owner Group
+                JEVisObject relOwner = rel.getEndObject();
+//                JEVisObject relTarget = rel.getStartObject();
+
+                //User cannot delte his own permission
+                if (userGroups.contains(relOwner)) {
+//                    System.out.println("cannot delete my own right");
+                    return false;
+                }
+
+                //get Owner of this group
+                for (JEVisRelationship relOwnerRel : relOwner.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
+                    try {
+                        JEVisObject groupOwnerOwner = relOwnerRel.getEndObject();
+//                        System.out.println("groupOwnerOwner: " + groupOwnerOwner.getName());
+
+                        if (userGroups.contains(groupOwnerOwner)) {
+//                            System.out.println("im the owner of the owner so its ok");
+                            return true;
+                        }
+
+                    } catch (Exception ex) {
+                        //TODO: remove this trycatch workaround which is nessasary because the user can see but not access relationshipts which are not for him
+                    }
+                }
+
+            }
+        } catch (JEVisException ex) {
+            java.util.logging.Logger.getLogger(RelationsManagment.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the given users is allowed to delete the given relationship
+     *
+     * TODO: add handling for none Userrights relationships TODO: i it a goodway
+     * to return only true and exeptions?
+     *
+     * @param user the current user using the JEAPI
+     * @param rel JEVisRelationship to test for if it can be deleted
+     *
+     * @return true if the user has the permission to delete the
+     * JEVisRelationship, throws JEVisException if false
+     * @throws JEVisException
+     */
+    public static boolean canDeleteRelationship(JEVisObject user, JEVisRelationship rel) throws JEVisException {
+//        user = user.getDataSource().getCurrentUser();
+        if (rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_CREATE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_DELETE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_EXECUTE
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_READ
+                || rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_WRITE) {
+            return canDeleteMembership(rel);
+        } else if (rel.getType() == JEVisConstants.ObjectRelationship.OWNER) {
+            return canDeleteOwnership(rel);
+        } else {
+            //TODO: check the rules for other kind of relationships
+            //Workaround for the alpha phase, normally the default is false
+            return true;
+        }
+    }
+
 }
