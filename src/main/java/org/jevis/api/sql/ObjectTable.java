@@ -160,7 +160,7 @@ public class ObjectTable {
             }
 
             rs = ps.executeQuery();
-            logger.error("getObject.SQl : {}. ", ps);
+            logger.debug("getObject.SQl : {}. ", ps);
 
             while (rs.next()) {
 
