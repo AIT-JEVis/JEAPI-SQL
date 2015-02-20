@@ -67,7 +67,7 @@ public class AttributeTable {
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
                 + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
-                + ") values(?,?,?,?,)";
+                + ") values(?,?,?,?)";
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -76,7 +76,12 @@ public class AttributeTable {
             ps.setLong(1, obj.getID());
             ps.setString(2, type.getName());
 
-            String unitJSON = type.getUnit().toJSON();
+            String unitJSON = "";
+            try {
+                unitJSON = type.getUnit().toJSON();
+            } catch (Exception ex) {
+
+            }
 
             //DisplayUnit
             ps.setString(3, unitJSON);

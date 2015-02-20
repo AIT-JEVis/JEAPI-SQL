@@ -262,43 +262,16 @@ public class JEVisObjectSQL implements JEVisObject {
                         break;
                     }
                 }
+
+                //TODO: disabled because whats the job of this
                 if (!isThere) {
-                    //TODO add commit to DB?
                     adb.insert(type, this);
                     _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
-
                 }
             }
             Collections.sort(_attributes);
         }
 
-//        //Check if attributes are loaded
-//        //Workaround disable  this simple cach TODO:reimplement
-//        if (_attributes == null) {
-//            if (true) {
-//                AttributeTable adb = new AttributeTable(_ds);
-//                _attributes = adb.getAttributes(this);
-//            }
-//
-//            //allow onl y vaild types, add missing
-//            for (JEVisType type : getJEVisClass().getTypes()) {
-//                boolean isThere = false;
-//                for (JEVisAttribute att : _attributes) {
-//                    if (att.isType(type)) {
-//                        isThere = true;
-//                        break;
-//                    }
-//                }
-//                if (!isThere) {
-//                    //TODO add commit to DB?
-//                    AttributeTable adb = new AttributeTable(_ds);
-//                    adb.insert(type, this);
-//                    _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
-//
-//                }
-//            }
-//            Collections.sort(_attributes);
-//        }
         return _attributes;
     }
 
