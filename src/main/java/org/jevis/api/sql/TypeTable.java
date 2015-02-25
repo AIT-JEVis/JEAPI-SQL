@@ -79,9 +79,13 @@ public class TypeTable {
 
             ps.setInt(5, type.getPrimitiveType());
             System.out.println("sql.unit: " + type.getUnit());
-            ps.setString(6, type.getUnit().toString());
-//            ps.setString(6, UnitManager.getInstance().formate(type.getUnit()));
+            if (type.getUnit() != null) {
+                ps.setString(6, type.getUnit().toString());
+            } else {
+                ps.setNull(6, java.sql.Types.VARCHAR);
+            }
 
+//            ps.setString(6, UnitManager.getInstance().formate(type.getUnit()));
             ps.setInt(7, type.getGUIPosition());
             ps.setInt(8, type.getValidity());
 
