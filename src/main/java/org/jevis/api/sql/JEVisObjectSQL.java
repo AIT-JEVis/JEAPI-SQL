@@ -40,6 +40,8 @@ import org.jevis.api.JEVisType;
 import static org.jevis.api.sql.ObjectTable.COLUMN_ID;
 import static org.jevis.api.sql.ObjectTable.COLUMN_NAME;
 import static org.jevis.api.sql.ObjectTable.COLUMN_CLASS;
+import org.jevis.commons.NullJEVisClass;
+import org.joda.time.DateTime;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +66,7 @@ public class JEVisObjectSQL implements JEVisObject {
     private List<JEVisRelationship> _relationships = new LinkedList<JEVisRelationship>();
     private JEVisObject _linkedObject = null;
     private Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
+    private DateTime _attributeLastChanged = null;
 
     public JEVisObjectSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
@@ -73,13 +76,20 @@ public class JEVisObjectSQL implements JEVisObject {
 //            _link = rs.getLong(COLUMN_LINK);
 //            _parentID = rs.getLong(COLUMN_PARENT);
             _class = rs.getString(COLUMN_CLASS);
-            _classObj = new JEVisClassSQL(ds, _class);
-//            _groupID = rs.getLong(COLUMN_GROUP);
 
-//            if (_class.equals("Link")) {//TODO: this is now done by the Repationship, remove
-//                _isLink = true;
-////                _linkedObject = ds.getObject(_link);
-//            }
+            if (!SimpleClassCache.getInstance().contains(_class)) {
+                System.out.println("Load Class over Object: " + _class);
+                ClassTable ct = new ClassTable(ds);
+                ct.getObjectClass(_class, true);
+//                SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, _class));
+            }
+            _classObj = SimpleClassCache.getInstance().getJEVisClass(_class);
+            if (_classObj == null) {
+                System.out.println("++++++++++++++++++++++++++++++++++++ Missing class for " + _id + "   class: " + _class);
+                _classObj = new NullJEVisClass(_class);
+            }
+
+//            _classObj = new JEVisClassSQL(ds, _class);
         } catch (SQLException ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
         }
@@ -240,39 +250,77 @@ public class JEVisObjectSQL implements JEVisObject {
         return chFromType;
     }
 
-    @Override
-    public List<JEVisAttribute> getAttributes() throws JEVisException {
-//        if (isLink()) {
-//            System.out.println("getLink.getAttributes(): " + this.getID());
-//            return _linkedObject.getAttributes();
-//        }
-
-        //Check if attributes are loaded
-        //Workaround disable  this simple cach TODO:reimplement
-        if (_attributes == null) {
-            _attributes = new LinkedList<JEVisAttribute>();
-            AttributeTable adb = _ds.getAttributeTable();
-            //allow onl y vaild types, add missing
-            for (JEVisType type : getJEVisClass().getTypes()) {
-                boolean isThere = false;
-                for (JEVisAttribute att : adb.getAttributes(this)) {
-                    if (att.isType(type)) {
-                        isThere = true;
-                        _attributes.add(att);
-                        break;
-                    }
-                }
-
-                //TODO: disabled because whats the job of this
-                if (!isThere) {
-                    adb.insert(type, this);
-                    _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
+    private void updateAttributes() throws JEVisException {
+//        System.out.println("updateAttributes ");
+        _attributes = new LinkedList<JEVisAttribute>();
+        AttributeTable adb = _ds.getAttributeTable();
+        //allow onl y vaild types, add missing
+        for (JEVisType type : getJEVisClass().getTypes()) {
+//            System.out.println("Type: " + type.getName());
+            boolean isThere = false;
+            for (JEVisAttribute att : adb.getAttributes(this)) {
+                if (att.isType(type)) {
+//                    System.out.println("is new " + att.getName());
+                    isThere = true;
+                    _attributes.add(att);
+                    break;
                 }
             }
-            Collections.sort(_attributes);
+
+            //TODO: disabled because whats the job of this?!
+            if (!isThere) {
+                adb.insert(type, this);
+                _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
+            }
+        }
+        Collections.sort(_attributes);
+
+        JEVisClassSQL asSQL = (JEVisClassSQL) getJEVisClass();
+        _attributeLastChanged = new DateTime(asSQL.getTypeLastChanged().getMillis());
+    }
+
+    @Override
+    public List<JEVisAttribute> getAttributes() throws JEVisException {
+
+        JEVisClassSQL asSQL = (JEVisClassSQL) getJEVisClass();
+//        System.out.println("getAtt " + asSQL.getTypeLastChanged() + "   " + _attributeLastChanged + "  uuid:" + asSQL.idOne);
+        if (_attributeLastChanged != null) {
+            if (asSQL.getTypeLastChanged() != null && _attributeLastChanged.isBefore(asSQL.getTypeLastChanged())) {
+//                System.out.println("Types are newer");
+                updateAttributes();
+            } else {
+//                System.out.println("is uptodate");
+            }
+        } else {
+//            System.out.println("_attributeLastChanged is null");
+            updateAttributes();
         }
 
         return _attributes;
+
+//        _attributes = new LinkedList<JEVisAttribute>();
+//        AttributeTable adb = _ds.getAttributeTable();
+//        //allow onl y vaild types, add missing
+//        for (JEVisType type : getJEVisClass().getTypes()) {
+//            boolean isThere = false;
+//            for (JEVisAttribute att : adb.getAttributes(this)) {
+//                if (att.isType(type)) {
+//                    isThere = true;
+//                    _attributes.add(att);
+//                    break;
+//                }
+//            }
+//
+//            //TODO: disabled because whats the job of this?!
+//            if (!isThere) {
+//                adb.insert(type, this);
+//                _attributes.add(new JEVisAttributeSQL(_ds, this, type));//TODO unsave, better reload from DB?
+//            }
+//        }
+//        Collections.sort(_attributes);
+////        }
+//
+//        return _attributes;
     }
 
     @Override
@@ -680,6 +728,7 @@ public class JEVisObjectSQL implements JEVisObject {
      * @throws JEVisException
      */
     private boolean canCreateHere(JEVisClass jclass) throws JEVisException {
+//        System.out.println("canCreateHere()");
         for (JEVisClass aclass : getAllAllowedChildrenClasses()) {
             if (aclass.equals(jclass)) {
                 if (jclass.isUnique()) {
@@ -744,7 +793,7 @@ public class JEVisObjectSQL implements JEVisObject {
     }
 
     protected void addRelationship(JEVisRelationship rel) throws JEVisException {
-        logger.debug("Add relationship to object: {}", rel);
+//        logger.debug("Add relationship to object: {}", rel);
         //TODO: mabe check if this relation is ok, but this is protected so no prio
         getRelationships().add(rel);
     }
@@ -755,9 +804,12 @@ public class JEVisObjectSQL implements JEVisObject {
     }
 
     private List<JEVisClass> getAllAllowedChildrenClasses() throws JEVisException {
+//        System.out.println("getAllAllowedChildrenClasses(): object: " + getID() + " class:" + getJEVisClass());
+
         List<JEVisClassRelationship> rels = getJEVisClass().getRelationships(
                 JEVisConstants.ClassRelationship.OK_PARENT,
                 JEVisConstants.Direction.BACKWARD);
+//        System.out.println("rels.size: " + rels.size());
         List<JEVisClass> okClasses = new LinkedList<JEVisClass>();
         for (JEVisClassRelationship rel : rels) {
             JEVisClass isAllowedClass = rel.getOtherClass(getJEVisClass());
@@ -782,12 +834,17 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public List<JEVisClass> getAllowedChildrenClasses() throws JEVisException {
+//        System.out.println("getAllowedChildrenClasses(): " + getID() + "  class: " + getJEVisClass());
         List<JEVisClass> allowedClasses = new ArrayList<JEVisClass>();
-        List<JEVisClass> allclasses = getAllAllowedChildrenClasses();
-        for (JEVisClass jclass : allclasses) {
-            if (canCreateHere(jclass)) {
-                allowedClasses.add(jclass);
+        try {
+            List<JEVisClass> allclasses = getAllAllowedChildrenClasses();
+            for (JEVisClass jclass : allclasses) {
+                if (canCreateHere(jclass)) {
+                    allowedClasses.add(jclass);
+                }
             }
+        } catch (Exception ex) {
+            System.out.println("Error 72151942143:  " + ex.getMessage());
         }
         return allowedClasses;
 

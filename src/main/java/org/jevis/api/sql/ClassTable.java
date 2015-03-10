@@ -18,19 +18,20 @@ package org.jevis.api.sql;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import org.jevis.api.JEVisClass;
@@ -52,7 +53,8 @@ public class ClassTable {
     public final static String COLUMN_UNIQUE = "isunique";
     private Connection _connection;
     private JEVisDataSourceSQL _ds;
-    private Map<String, JEVisClass> _cach = new HashMap<String, JEVisClass>();
+//    private final SimpleClassCache _cache = SimpleClassCache.getInstance();
+//    private Map<String, JEVisClass> _cach = new HashMap<String, JEVisClass>();
     org.slf4j.Logger logger = LoggerFactory.getLogger(ClassTable.class);
 
     public ClassTable(JEVisDataSourceSQL ds) throws JEVisException {
@@ -82,7 +84,8 @@ public class ClassTable {
             int count = ps.executeUpdate();
 
             if (count == 1) {
-                _cach.remove(jlas.getName());
+                SimpleClassCache.getInstance().remove(jlas.getName());
+
                 return true;
             } else {
                 return false;
@@ -102,6 +105,7 @@ public class ClassTable {
     }
 
     public List<JEVisClass> getAllHeirs(JEVisClass jlass) throws JEVisException {
+        System.out.println("getAllHeirs()");
         String sql = "select * from " + TABLE;
         PreparedStatement ps = null;
         List<JEVisClass> all = new ArrayList<JEVisClass>();
@@ -115,13 +119,17 @@ public class ClassTable {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                all.add(new JEVisClassSQL(_ds, rs));
+                String nName = rs.getString(ClassTable.COLUMN_NAME);
+                if (!SimpleClassCache.getInstance().contains(nName)) {
+                    SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, rs));
+                }
+                all.add(SimpleClassCache.getInstance().getJEVisClass(nName));
+
             }
 
             findHeirs(all, heirs, jlass);
 
             return heirs;
-
 
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -150,12 +158,14 @@ public class ClassTable {
 
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, name);
-//        ps.setString(2, discription); 
 
-//        System.out.println("putClass.sql: " + ps);
+//        ps.setString(2, discription); 
+            System.out.println("putClass.sql: " + ps);
 //        int value = ps.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
+
             int value = ps.executeUpdate();
             if (value == 1) {
+                getObjectClass(name);
                 return true;
             } else {
                 return false;
@@ -178,11 +188,15 @@ public class ClassTable {
 
     public boolean update(JEVisClass jclass, String oldName) throws JEVisException {
 
+        System.out.println("#######");
+        System.out.println("jclass.name: " + jclass);
+
+        System.out.println("ClassTable.update+ " + ((JEVisClassSQL) jclass).getFile());
         try {
             String sql = "update " + TABLE
                     + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?";// + COLUMN_ICON + "=?"
 
-            if (((JEVisClassSQL) jclass).getFile() != null) {
+            if (((JEVisClassSQL) jclass).getFile() != null || jclass.getIcon() != null) {
                 sql += ", " + COLUMN_ICON + "=?";
             }
             sql += " where " + COLUMN_NAME + "=?";
@@ -198,13 +212,18 @@ public class ClassTable {
             ps.setString(i++, jclass.getName());
             ps.setBoolean(i++, jclass.isUnique());
 
-
             if (((JEVisClassSQL) jclass).getFile() != null) {
                 File file = ((JEVisClassSQL) jclass).getFile();
                 FileInputStream fis = new FileInputStream(file);
                 ps.setBinaryStream(i++, fis, (int) file.length());
-            }
+            } else if (jclass.getIcon() != null) {
+                System.out.println("usinf icon");
+                ByteArrayOutputStream os = new ByteArrayOutputStream();
+                ImageIO.write(jclass.getIcon(), "gif", os);
+                InputStream is = new ByteArrayInputStream(os.toByteArray());
 
+                ps.setBinaryStream(i++, is);
+            }
 
             ps.setString(i++, oldName);
 
@@ -231,8 +250,7 @@ public class ClassTable {
 //
 //                ps.setString(4, jclass.getName());
 //            }
-
-            System.out.println("sql: " + ps);
+            System.out.println("update class: " + ps);
 
             int res = ps.executeUpdate();
 
@@ -264,7 +282,6 @@ public class ClassTable {
 
                     psUpdate.executeUpdate();
 
-
                     //------------------- Update existing Valid Parents #2
 //                    System.out.println("update Existing valid JEVis parents");
                     String updateValid2 = "update " + ClassRelationTable.TABLE
@@ -283,7 +300,6 @@ public class ClassTable {
         } catch (Exception ex) {
             ex.printStackTrace();
         }
-
 
         return false;
     }
@@ -310,23 +326,23 @@ public class ClassTable {
         return baos.toByteArray();
     }
 
-    public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
+    public JEVisClass getObjectClass(String name) throws JEVisException {
+
+        System.out.println("getObjectClass() " + name);
         JEVisClass jClass = null;
 
         //TODO:reenable cach disable cach
-        if (cach) {
-            if (_cach.containsKey(name)) {
-                return _cach.get(name);
-            }
-        }
-
+//        if (cach) {
+//            if (_cach.containsKey(name)) {
+//                return _cach.get(name);
+//            }
+//        }
         String sql = "select * from " + TABLE
                 + " where  " + COLUMN_NAME + "=?"
                 + " limit 1 ";
 
         PreparedStatement ps = null;
         _ds.addQuery();
-
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -335,7 +351,11 @@ public class ClassTable {
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                jClass = new JEVisClassSQL(_ds, rs);
+                String nName = rs.getString(ClassTable.COLUMN_NAME);
+                JEVisClassSQL newClass = new JEVisClassSQL(_ds, rs);
+                SimpleClassCache.getInstance().addClass(newClass);
+
+                jClass = SimpleClassCache.getInstance().getJEVisClass(nName);
             }
 
         } catch (Exception ex) {
@@ -352,11 +372,63 @@ public class ClassTable {
             }
         }
 
-        _cach.put(name, jClass);
         return jClass;
     }
 
+    public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
+        return SimpleClassCache.getInstance().getJEVisClass(name);
+//        
+//        
+//        System.out.println("getObjectClass() " + cach);
+//        JEVisClass jClass = null;
+//
+//        //TODO:reenable cach disable cach
+////        if (cach) {
+////            if (_cach.containsKey(name)) {
+////                return _cach.get(name);
+////            }
+////        }
+//        String sql = "select * from " + TABLE
+//                + " where  " + COLUMN_NAME + "=?"
+//                + " limit 1 ";
+//
+//        PreparedStatement ps = null;
+//        _ds.addQuery();
+//
+//        try {
+//            ps = _connection.prepareStatement(sql);
+//            ps.setString(1, name);
+//
+//            ResultSet rs = ps.executeQuery();
+//
+//            while (rs.next()) {
+//                String nName = rs.getString(ClassTable.COLUMN_NAME);
+//                if (!SimpleClassCache.getInstance().contains(nName)) {
+//                    SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, rs));
+//                }
+//
+//                jClass = SimpleClassCache.getInstance().getJEVisClass(nName);
+//            }
+//
+//        } catch (Exception ex) {
+//
+//            ex.printStackTrace();
+//            throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
+//        } finally {
+//            if (ps != null) {
+//                try {
+//                    ps.close();
+//                } catch (SQLException ex) {
+//                    logger.debug("Error while closing DB connection: {}. ", ex);
+//                }
+//            }
+//        }
+//
+//        return jClass;
+    }
+
     public List<JEVisClass> getAllObjectClasses() throws JEVisException, SQLException {
+//        System.out.println("getAllObjectClasses()");
         List<JEVisClass> jClasses = new LinkedList<JEVisClass>();
 
         //TODO:reenable cach disable cach
@@ -365,13 +437,11 @@ public class ClassTable {
 //                return _cach.get(name);
 //            }
 //        }
-
         String sql = "select * from " + TABLE;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
         _ds.addQuery();
-
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -379,9 +449,14 @@ public class ClassTable {
             rs = ps.executeQuery();
 
             while (rs.next()) {
-                jClasses.add(new JEVisClassSQL(_ds, rs));
+                String nName = rs.getString(ClassTable.COLUMN_NAME);
+                if (!SimpleClassCache.getInstance().contains(nName)) {
+                    SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, rs));
+                }
+                jClasses.add(SimpleClassCache.getInstance().getJEVisClass(nName));
             }
 
+//            System.out.println("getAllObjectClasses()----> end");
         } catch (Exception ex) {
 
             ex.printStackTrace();

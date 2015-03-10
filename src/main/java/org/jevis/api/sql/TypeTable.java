@@ -143,13 +143,12 @@ public class TypeTable {
             ps.setString(1, type.getJEVisClass().getName());
             ps.setString(2, type.getName());
 
-            System.out.println("Delete Type: " + type);
-
+//            System.out.println("Delete Type: " + type);
             if (ps.executeUpdate() == 1) {
-                System.out.println("true");
+//                System.out.println("true");
                 return true;
             } else {
-                System.out.println("false");
+//                System.out.println("false");
                 return false;
             }
 
@@ -192,6 +191,7 @@ public class TypeTable {
 
     /**
      *
+     * @param jclass
      * @param object
      * @return
      * @throws SQLException

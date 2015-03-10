@@ -38,6 +38,7 @@ import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
 import org.jevis.api.JEVisUnit;
 import org.jevis.commons.unit.JEVisUnitImp;
+import org.jevis.commons.utils.Benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,6 +68,8 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private ClassRelationTable _crt;
     private int qCount = 0;//for benchmarking
     private boolean ssl = false;
+
+    private List<JEVisObject> _objectChache = new ArrayList<JEVisObject>();
 
     final private JEVisInfo _info = new JEVisInfo() {
 
@@ -167,6 +170,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             logger.info("Using Connection string: {}", conSring);
             DriverManager.setLoginTimeout(20);
             _connect = DriverManager.getConnection(conSring);
+
             return _connect.isValid(2000);
 
         } catch (Exception ex) {
@@ -192,6 +196,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         logger.info("Try to login user: {}", _jevisUsername);
 
         try {
+            Benchmark bench = new Benchmark();
+            System.out.println("Load all classes");
+
+            getJEVisClasses();
+            bench.printBechmark("Loading all classes");
+
             _user = getObjectTable().loginUser(_jevisUsername, _jevisUserPW);
             if (_user != null) {
                 logger.info("Login OK for {}", _jevisUsername);
@@ -207,8 +217,14 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public JEVisClass getJEVisClass(String name) throws JEVisException {
-        JEVisClass jClass = getClassTable().getObjectClass(name, true);
-        return jClass;
+//        System.out.println("DS.getJEVisClass: " + name);
+        if (SimpleClassCache.getInstance().contains(name)) {
+            getClassTable().getObjectClass(name, true);
+        }
+
+        return SimpleClassCache.getInstance().getJEVisClass(name);
+//        JEVisClass jClass = getClassTable().getObjectClass(name, true);
+//        return jClass;
     }
 
     @Override
@@ -225,11 +241,11 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public JEVisClass buildClass(String name) throws JEVisException {
         try {
-            System.out.println("Build new JEVisClass: " + name);
+//            System.out.println("Build new JEVisClass: " + name);
             if (RelationsManagment.isSysAdmin(_user)) {
-                System.out.println("User is Admin");
+//                System.out.println("User is Admin");
                 if (getClassTable().insert(name)) {
-                    System.out.println("Insert done");
+//                    System.out.println("Insert done");
 
                     return getClassTable().getObjectClass(name, false);
                 } else {
@@ -267,11 +283,26 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return roots;
     }
 
+    private JEVisObject getObjectFromChache(Long id) {
+        for (JEVisObject obj : _objectChache) {
+            if (obj.getID().equals(id)) {
+                return obj;
+            }
+        }
+        return null;
+    }
+
     @Override
     public JEVisObject getObject(Long id) throws JEVisException {
         try {
             JEVisObject obj = null;
+            JEVisObject cachedObj = getObjectFromChache(id);
+            if (cachedObj != null) {
+                return cachedObj;
+            }
+
             obj = getObjectTable().getObject(id, true);
+            _objectChache.add(obj);
 
             if (RelationsManagment.canRead(_user, obj)) {
                 return obj;

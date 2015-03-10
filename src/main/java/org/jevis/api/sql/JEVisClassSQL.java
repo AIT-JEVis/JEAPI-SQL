@@ -24,11 +24,13 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
+import java.util.UUID;
 import java.util.logging.Level;
 import javax.imageio.ImageIO;
 import org.jevis.api.JEVisClass;
@@ -39,6 +41,7 @@ import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisType;
 import static org.jevis.api.JEVisConstants.*;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,6 +50,8 @@ import org.slf4j.LoggerFactory;
  * @author Florian Simon <florian.simon@envidatec.com>
  */
 public class JEVisClassSQL implements JEVisClass {
+
+    public UUID idOne = UUID.randomUUID();
 
     private JEVisDataSourceSQL _ds;
     private BufferedImage _icon; //TODo is this a file resource?
@@ -61,13 +66,16 @@ public class JEVisClassSQL implements JEVisClass {
     private JEVisClass _inheritance = null;
     private Logger logger = LoggerFactory.getLogger(JEVisClassSQL.class);
     private File _iconFile;
+    private boolean _updateTypes = true;
+    private DateTime _typeLastChanged = null;
 
-    public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
-        _ds = ds;
-        _name = name;
-        isLoaded = false;
-    }
-
+//    public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
+//        _ds = ds;
+//        _name = name;
+//        isLoaded = false;
+//        System.out.println("JEVisClassSQL+() name:" + _name + "  UUID:" + idOne);
+//
+//    }
     public JEVisClassSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         _ds = ds;
         //todo parsing
@@ -75,6 +83,7 @@ public class JEVisClassSQL implements JEVisClass {
 
         try {
             _name = rs.getString(ClassTable.COLUMN_NAME);
+//            System.out.println("JEVisClassSQL() UUID:" + idOne + "  name:" + _name);
             _oldName = _name;
             _discription = rs.getString(ClassTable.COLUMN_DESCRIPTION);
 
@@ -87,7 +96,6 @@ public class JEVisClassSQL implements JEVisClass {
 //                _icon = new ImageIcon(img);
                 _icon = img;
             }
-
             //TODO add group
         } catch (Exception ex) {
 
@@ -98,11 +106,18 @@ public class JEVisClassSQL implements JEVisClass {
     }
 
     @Override
+    public void setIcon(BufferedImage icon) {
+//        System.out.println("Seticon: class: " + getName() + " UUID: " + idOne + " icon" + icon);
+        _icon = icon;
+        _hasChanged = true;
+    }
+
+    @Override
     public void setIcon(File icon) throws JEVisException {
         _iconFile = icon;
         try {
             _icon = ImageIO.read(icon);
-            System.out.println("set icon from file: " + _icon.getWidth());
+//            System.out.println("set icon from file: " + _icon.getWidth());
         } catch (IOException ex) {
             java.util.logging.Logger.getLogger(JEVisClassSQL.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -129,21 +144,16 @@ public class JEVisClassSQL implements JEVisClass {
      * Not the best way to secure that the class is leaded properly
      */
     private void load() {
-        if (!isLoaded) {
-            rollBack();
-        }
+//        if (!isLoaded) {
+//            rollBack();
+//        }
     }
 
     @Override
     public BufferedImage getIcon() {
         load();
+//        System.out.println("getIcon: class: " + getName() + " UUID: " + idOne + "  icon:" + _icon);
         return _icon;
-    }
-
-    @Override
-    public void setIcon(BufferedImage icon) {
-        _icon = icon;
-        _hasChanged = true;
     }
 
     @Override
@@ -219,29 +229,6 @@ public class JEVisClassSQL implements JEVisClass {
         return false;
     }
 
-    @Override
-    public List<JEVisType> getTypes() {
-        if (_types == null) {
-            try {
-                TypeTable tt = new TypeTable(_ds);
-                _types = tt.getAll(this);
-
-                if (getInheritance() != null) {
-                    _types.addAll(getInheritance().getTypes());
-                }
-
-                Collections.sort(_types);
-
-            } catch (Exception ex) {
-                System.out.println("error while getting Attributes: " + ex);
-                ex.printStackTrace();
-                return new ArrayList<JEVisType>();
-            }
-        }
-
-        return _types;
-    }
-
     public JEVisType getType(JEVisType type) throws JEVisException {
         for (JEVisType ty : getTypes()) {
             if (ty.equals(type)) {
@@ -291,19 +278,60 @@ public class JEVisClassSQL implements JEVisClass {
         return vaildParents;
     }
 
+    public DateTime getTypeLastChanged() {
+        return _typeLastChanged;
+    }
+
+    @Override
+    public List<JEVisType> getTypes() {
+        System.out.print(".");
+        //TODO: reenable chaching?!
+//        if (_types == null) {
+        if (_updateTypes || _types == null) {
+            _typeLastChanged = DateTime.now();
+//            System.out.println("Build type liste for: " + _name + " new date: " + _typeLastChanged + "  add: " + idOne);
+            _updateTypes = false;
+//            System.out.println("Type is null");
+            try {
+                TypeTable tt = new TypeTable(_ds);
+                _types = tt.getAll(this);
+
+                //TODo update hiers
+                if (getInheritance() != null) {
+                    _types.addAll(getInheritance().getTypes());
+                }
+
+//                System.out.println("size: " + _types.size());
+                Collections.sort(_types);
+
+            } catch (Exception ex) {
+                System.out.println("error while getting Attributes: " + ex);
+                ex.printStackTrace();
+                return new ArrayList<JEVisType>();
+            }
+        }
+//        System.out.println("getTypes()");
+
+        return _types;
+    }
+
     @Override
     public JEVisType buildType(String name) {
         //TODo check userrights
         try {
             TypeTable tt = new TypeTable(_ds);
             if (tt.insert(this, name)) {
-                _types = null;
+//                _types = null;
+                _updateTypes = true;
                 for (JEVisType t : getTypes()) {
                     if (t.getName().equals(name)) {
+                        System.out.println("return new Type: " + t);
+
                         return t;
                     }
                 }
             }
+            System.out.println("return null type");
             return null;
 
         } catch (Exception ex) {
@@ -464,14 +492,24 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public JEVisClassRelationship buildRelationship(JEVisClass jclass, int type, int direction) throws JEVisException {
+        System.out.println("buildRelationship: this:" + this.getName() + " to-class: " + jclass + "  type: " + type + "  direction: " + direction);
         JEVisClassRelationship newRel = null;
         if (direction == JEVisConstants.Direction.BACKWARD) {
             newRel = _ds.getClassRelationshipTable().insert(jclass, this, type);
         } else {
             newRel = _ds.getClassRelationshipTable().insert(this, jclass, type);
         }
+
         if (newRel != null && _relations != null) {
             _relations.add(newRel);
+            try {
+                //TODo: remove this workaround
+                JEVisClassSQL otherClass = (JEVisClassSQL) jclass;
+                System.out.println("JEVisClassSQL: " + otherClass);
+                otherClass._relations.add(newRel);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
         return newRel;
 
@@ -481,6 +519,9 @@ public class JEVisClassSQL implements JEVisClass {
     public void deleteRelationship(JEVisClassRelationship rel) throws JEVisException {
         if (_ds.getClassRelationshipTable().delete(rel)) {
             _relations.remove(rel);
+            //TODo: remove this workaround
+            JEVisClassSQL otherClass = (JEVisClassSQL) rel.getOtherClass(this);
+            otherClass._relations.remove(rel);
         }
     }
 
