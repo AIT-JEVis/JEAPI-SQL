@@ -63,6 +63,14 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
 
     @Override
     public JEVisObject getEndObject() throws JEVisException {
+        if (SimpleObjectCache.getInstance().contains(_end)) {
+//            System.out.println("Rel.IsInCache");
+            _endObj = SimpleObjectCache.getInstance().getObject(_end);
+            return _endObj;
+        } else {
+//            System.out.println("ne: " + _end);
+        }
+
         if (_endObj == null) {
             _endObj = _ds.getObjectTable().getObject(_end, true);
         }
@@ -109,6 +117,7 @@ public class JEVisRelationshipSQL implements JEVisRelationship {
 
     @Override
     public String toString() {
+
         String typeName = "unknown(" + _type + ")";
         switch (_type) {
             case 1:

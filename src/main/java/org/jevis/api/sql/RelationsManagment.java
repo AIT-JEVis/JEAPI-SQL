@@ -108,17 +108,28 @@ public class RelationsManagment {
      * @return
      */
     public static boolean checkMebershipForType(JEVisObject user, JEVisObject object, int type) throws JEVisException {
-//        System.out.println("checkMebershipForType: user: " + user.getID() + " object: " + object.getID() + " type: " + type);
+        try {
+            JEVisDataSourceSQL sqlDS = (JEVisDataSourceSQL) user.getDataSource();
+            if (sqlDS.getCurrentUserObject().isSysAdmin()) {
+                return true;
+            }
+        } catch (Exception ex) {
+            System.out.println("Error while checking Sys Admin status:  " + ex);
+            logger.error("Error while checking Sys Admin status:  {}", ex.getMessage());//ToDO there is some error here
+        }
+
+        logger.debug("checkMebershipForType: user: " + user.getID() + " object: " + object.getID() + " type: " + type);
         try {
             List<JEVisRelationship> userMemberships = getMembershipsRel(user);
 
             for (JEVisRelationship or : object.getRelationships()) {
                 for (JEVisRelationship ur : userMemberships) {
-                    //is the Object Owner end the same as the user membership end                    
 
-//                    logger.error("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
+                    //is the Object Owner end the same as the user membership end                
+                    logger.debug("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
                     if (ur.getEndObject().getID().equals(or.getEndObject().getID())) {
                         if (ur.isType(type)) {
+
                             return true;
                         }
                     }

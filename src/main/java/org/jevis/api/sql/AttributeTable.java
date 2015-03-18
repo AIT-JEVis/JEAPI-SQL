@@ -71,7 +71,7 @@ public class AttributeTable {
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
-            _ds.addQuery();
+            _ds.addQuery("AttributeTable.insert");
 
             ps.setLong(1, obj.getID());
             ps.setString(2, type.getName());
@@ -112,7 +112,7 @@ public class AttributeTable {
                 + " where " + COLUMN_OBJECT + "=?";
 
         try {
-            _ds.addQuery();
+            _ds.addQuery("AttributeTable.getAttributes");
             PreparedStatement ps = _connection.prepareStatement(sql);
             ps.setLong(1, object.getID());
 
@@ -149,7 +149,7 @@ public class AttributeTable {
         PreparedStatement ps = null;
 
         try {
-            _ds.addQuery();
+            _ds.addQuery("AttributeTable.updateAttributeTS");
             ps = _connection.prepareStatement(sql);
 
             //unit

@@ -70,15 +70,15 @@ public class JEVisObjectSQL implements JEVisObject {
 
     public JEVisObjectSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
+
             _ds = ds;
             _name = rs.getString(COLUMN_NAME);
             _id = rs.getLong(COLUMN_ID);
-//            _link = rs.getLong(COLUMN_LINK);
-//            _parentID = rs.getLong(COLUMN_PARENT);
             _class = rs.getString(COLUMN_CLASS);
 
+//            System.out.println("new Object: " + _id + " " + _name);
             if (!SimpleClassCache.getInstance().contains(_class)) {
-                System.out.println("Load Class over Object: " + _class);
+//                System.out.println("Load Class over Object: " + _class);
                 ClassTable ct = new ClassTable(ds);
                 ct.getObjectClass(_class, true);
 //                SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, _class));
@@ -695,6 +695,7 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public List<JEVisRelationship> getRelationships() throws JEVisException {
+//        System.out.println("getRelationships() for " + _name);
         //ToDo: care for userrights
         return _relationships;
     }
@@ -757,7 +758,6 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public List<JEVisRelationship> getRelationships(int type) throws JEVisException {
-        System.out.println("getRelationships(int)");
         List<JEVisRelationship> tmp = new LinkedList<JEVisRelationship>();
         for (JEVisRelationship rel : getRelationships()) {
             if (rel.isType(type)) {
@@ -795,7 +795,12 @@ public class JEVisObjectSQL implements JEVisObject {
     protected void addRelationship(JEVisRelationship rel) throws JEVisException {
 //        logger.debug("Add relationship to object: {}", rel);
         //TODO: mabe check if this relation is ok, but this is protected so no prio
-        getRelationships().add(rel);
+
+        if (!_relationships.contains(rel)) {
+            _relationships.add(rel);
+        } else {
+//            System.out.println("-");
+        }
     }
 
     @Override

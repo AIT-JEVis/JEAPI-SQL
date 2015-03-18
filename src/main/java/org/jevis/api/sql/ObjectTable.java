@@ -26,6 +26,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
@@ -38,6 +39,7 @@ import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
+import org.jevis.commons.JEVisUser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,45 +67,112 @@ public class ObjectTable {
         _ds = ds;
     }
 
-    public JEVisObject loginUser(String name, String pw) throws JEVisException {
-        String sql = "select " + TABLE + ".*"
-                + "," + SampleTable.TABLE + "." + SampleTable.COLUMN_VALUE
-                + " from " + TABLE
-                + " left join " + SampleTable.TABLE
-                + " on " + TABLE + "." + COLUMN_ID + "=" + SampleTable.TABLE + "." + SampleTable.COLUMN_OBJECT
-                + " where " + TABLE + "." + COLUMN_NAME + "=?"
-                + " and " + TABLE + "." + COLUMN_CLASS + "=?"
-                + " and " + SampleTable.TABLE + "." + SampleTable.COLUMN_ATTRIBUTE + "=?"
-                + " ORDER BY " + SampleTable.TABLE + "." + SampleTable.COLUMN_TIMESTAMP + " DESC"
+    public JEVisObject loginUser(JEVisDataSourceSQL ds, String name, String pw) throws JEVisException {
+        /*
+         String sql = "select " + TABLE + ".*"
+         + "," + SampleTable.TABLE + "." + SampleTable.COLUMN_VALUE
+         + " from " + TABLE
+         + " left join " + SampleTable.TABLE
+         + " on " + TABLE + "." + COLUMN_ID + "=" + SampleTable.TABLE + "." + SampleTable.COLUMN_OBJECT
+         + " where " + TABLE + "." + COLUMN_NAME + "=?"
+         + " and " + TABLE + "." + COLUMN_CLASS + "=?"
+         //                + " and " + SampleTable.TABLE + "." + SampleTable.COLUMN_ATTRIBUTE + "=?"
+         + " and ("
+         + SampleTable.TABLE + "." + SampleTable.COLUMN_ATTRIBUTE + "=?"
+         + " or " + SampleTable.TABLE + "." + SampleTable.COLUMN_ATTRIBUTE + "=?"
+         + ")"
+         + " ORDER BY " + SampleTable.TABLE + "." + SampleTable.COLUMN_TIMESTAMP + " DESC"
+         + " limit 1";
+         */
+
+        String sqlUser = "select * from " + TABLE
+                + " where " + COLUMN_NAME + "=?"
+                + " and " + COLUMN_CLASS + "=?"
+                + " and " + COLUMN_DELETE + " is null"
                 + " limit 1";
+
+        String sqlAttributes = "select s.*"
+                + " from "
+                + " ( select " + SampleTable.COLUMN_ATTRIBUTE + ", MAX(" + SampleTable.COLUMN_TIMESTAMP + ") as maxtime"
+                + " from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=? group by " + SampleTable.COLUMN_ATTRIBUTE
+                + " ) as m "
+                + " inner join " + SampleTable.TABLE
+                + " s ON s." + SampleTable.COLUMN_ATTRIBUTE + "=m." + SampleTable.COLUMN_ATTRIBUTE
+                + " AND s." + SampleTable.COLUMN_OBJECT + "=?"
+                + " AND m.maxtime=s." + SampleTable.COLUMN_TIMESTAMP;
 
         PreparedStatement ps = null;
         ResultSet rs = null;
         JEVisObject object = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.loginUser");
 
         try {
-
-            ps = _connection.prepareStatement(sql);
+            //First get the use by name, the create User securs the there is only one user per name
+            ps = _connection.prepareStatement(sqlUser);
             ps.setString(1, name);
             ps.setString(2, JEVisConstants.Class.USER);
-            ps.setString(3, JEVisConstants.Attribute.USER_PASSWORD);
 
             logger.debug("SQL: {}", ps.toString());
 
             rs = ps.executeQuery();
 
             while (rs.next()) {
-                String dbpw = rs.getString(SampleTable.COLUMN_VALUE);
-                if (PasswordHash.validatePassword(pw, dbpw)) {
-//                    object = new JEVisObjectSQL(_ds, rs);
-                    object = getObject(rs.getLong(COLUMN_ID), false);
-                } else {
-                    throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
-                }
+
+//                object = new JEVisObjectSQL(_ds, rs);
+                object = getObject(rs.getLong(COLUMN_ID), false);
+                SimpleObjectCache.getInstance().addObject(object);
 
             }
 
+            if (object != null) {
+                JEVisUser user = new JEVisUser();
+                ds.setCurrentUserObject(user);
+
+                ps = _connection.prepareStatement(sqlAttributes);
+                ps.setLong(1, object.getID());
+
+                ps.setLong(2, object.getID());
+                rs = ps.executeQuery();
+
+                while (rs.next()) {
+
+                    String attribute = rs.getString(SampleTable.COLUMN_ATTRIBUTE);
+
+                    if (attribute.equals(JEVisConstants.Attribute.USER_PASSWORD)) {
+                        String dbpw = rs.getString(SampleTable.COLUMN_VALUE);
+//                        System.out.println("pw: " + dbpw);
+                        if (PasswordHash.validatePassword(pw, dbpw)) {
+//                            System.out.println("Password OK");
+                        } else {
+                            throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
+                        }
+                    } else if (attribute.equals(JEVisConstants.Attribute.USER_SYS_ADMIN)) {
+                        int isAdmin = rs.getInt(SampleTable.COLUMN_VALUE);
+                        if (isAdmin == 1) {
+                            user.setSysAdmin(true);
+//                            System.out.println("Is Sys Admin");
+                        } else {
+                            user.setSysAdmin(false);
+                        }
+                    } else if (attribute.equals(JEVisConstants.Attribute.USER_ENABLED)) {
+                        int enabled = rs.getInt(SampleTable.COLUMN_VALUE);
+                        if (enabled == 1) {
+                            user.setEnabled(true);
+//                            System.out.println("is Enabled");
+                        } else {
+                            user.setEnabled(false);
+                        }
+                    }
+                }
+//                if (user.isEnabled()) {
+//
+//                }
+
+            } else {
+                throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
+            }
+
+//            ds.setCurrentUserObject(new JEVisUser(object,));
             return object;
         } catch (Exception ex) {
 
@@ -127,6 +196,8 @@ public class ObjectTable {
      * @throws JEVisException
      */
     public List<JEVisObject> getObjects(List<JEVisClass> classes) throws JEVisException {
+//        System.out.println("getObjects#: " + classes.size());
+//        System.out.println("classes: " + Arrays.toString(classes.toArray()));
         String sql = "select " + TABLE + ".*"
                 + "," + RelationshipTable.TABLE + ".*"
                 + " from " + TABLE
@@ -138,7 +209,7 @@ public class ObjectTable {
         PreparedStatement ps = null;
         ResultSet rs = null;
         List<JEVisObject> objects = new ArrayList<JEVisObject>();
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.getObjects");
 
         try {
             boolean firstRun = true;
@@ -164,21 +235,32 @@ public class ObjectTable {
 
             while (rs.next()) {
 
-                //TODO:replace, this is an not so opimal way to load all relationships for an Object in one sql query
-                boolean isCache = false;
-                for (JEVisObject ob : objects) {
-                    if (ob.getID().equals(rs.getLong(COLUMN_ID))) {
-                        isCache = true;
-                        ((JEVisObjectSQL) ob).addRelationship(new JEVisRelationshipSQL(_ds, rs));
-                    }
-                }
+                long objectID = rs.getLong(COLUMN_ID);
 
-                if (!isCache) {
+                if (!SimpleObjectCache.getInstance().contains(objectID)) {
                     JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
+                    SimpleObjectCache.getInstance().addObject(newObj);
                     newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
                     objects.add(newObj);
+                } else {
+                    JEVisObject cachedObj = SimpleObjectCache.getInstance().getObject(objectID);
+                    ((JEVisObjectSQL) cachedObj).addRelationship(new JEVisRelationshipSQL(_ds, rs));
                 }
 
+                //without cache
+//                boolean isCache = false;
+//                for (JEVisObject ob : objects) {
+//                    if (ob.getID().equals(rs.getLong(COLUMN_ID))) {
+//                        isCache = true;
+//                        ((JEVisObjectSQL) ob).addRelationship(new JEVisRelationshipSQL(_ds, rs));
+//                    }
+//                }
+//
+//                if (!isCache) {
+//                    JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
+//                    newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
+//                    objects.add(newObj);
+//                }
             }
 
             return objects;
@@ -201,7 +283,7 @@ public class ObjectTable {
                 + "(" + COLUMN_NAME + "," + COLUMN_CLASS + " )"
                 + " values(?,?)";
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.insertObject");
 
         try {
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -270,7 +352,7 @@ public class ObjectTable {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.updateObject");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -304,7 +386,7 @@ public class ObjectTable {
                 + "(" + COLUMN_NAME + "," + COLUMN_GROUP + "," + COLUMN_LINK + "," + COLUMN_CLASS + ")"
                 + " values(?,?,?,?)";
         JEVisObject newObject = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.insertLink");
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -338,17 +420,13 @@ public class ObjectTable {
     public JEVisObject getObject(Long id, boolean cach) throws JEVisException {
         logger.debug("getObject: {} ", id);
 
-        if (cach) {
-//            logger.debug("using cach is on");
-            if (_cach.containsKey(id)) {
-                logger.debug("found object in cach");
-                return _cach.get(id);
-            }
-            logger.debug("Object not in cach");
+        if (SimpleObjectCache.getInstance().contains(id)) {
+            logger.debug("getObject {} is allready in cache", id);
+            return SimpleObjectCache.getInstance().getObject(id);
         }
 
-        JEVisObjectSQL object = null;
-        _ds.addQuery();
+//        JEVisObjectSQL object = null;
+        _ds.addQuery("ObjectTable.getObject");
 
         String sql = "select o.*"
                 + ",r.*"
@@ -367,13 +445,29 @@ public class ObjectTable {
             ps.setLong(1, id);
 
             logger.debug("getObject.sql: {} ", ps);
+
             ResultSet rs = ps.executeQuery();
 
             while (rs.next()) {
-                if (object == null) {
-                    object = new JEVisObjectSQL(_ds, rs);
+
+                long objectID = rs.getLong(COLUMN_ID);
+//                JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
+//                newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
+//                SimpleObjectCache.getInstance().addClass(newObj);
+
+                if (!SimpleObjectCache.getInstance().contains(objectID)) {
+                    JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
+                    newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
+                    SimpleObjectCache.getInstance().addObject(newObj);
+                } else {
+                    JEVisObjectSQL sqlObj = (JEVisObjectSQL) SimpleObjectCache.getInstance().getObject(objectID);
+                    sqlObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
                 }
-                object.addRelationship(new JEVisRelationshipSQL(_ds, rs));
+
+//                if (object == null) {
+//                    object = new JEVisObjectSQL(_ds, rs);
+//                }
+//                object.addRelationship(new JEVisRelationshipSQL(_ds, rs));
             }
 
         } catch (SQLException ex) {
@@ -391,118 +485,11 @@ public class ObjectTable {
             }
         }
 
-        _cach.put(id, object);
-        return object;
+        return SimpleObjectCache.getInstance().getObject(id);
+//        _cach.put(id, object);
+//        return object;
     }
 
-//    public List<JEVisObject> getChildren(JEVisObject obj) throws JEVisException {
-//        ResultSet rs = null;
-//        List<JEVisObject> children = new ArrayList<JEVisObject>();
-//        _ds.addQuery();
-//
-//        String sql = "select o.*"
-//                + ",r.*"
-//                + " from " + TABLE + " o"
-//                + " left join " + RelationshipTable.TABLE + " r"
-//                + " on o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_START
-//                + " or o." + COLUMN_ID + "=" + "r." + RelationshipTable.COLUMN_END
-//                + " where  o." + COLUMN_PARENT + "=?"
-//                + " and o." + COLUMN_DELETE + " is null";
-//
-//        try {
-//            PreparedStatement ps = _connection.prepareStatement(sql);
-//            ps.setLong(1, obj.getID());
-//
-//
-////        System.out.println("getObject.sql: "+ps);
-//            rs = ps.executeQuery();
-//
-//            Map<Long, JEVisObjectSQL> _tmp = new HashMap<Long, JEVisObjectSQL>();
-//
-//            while (rs.next()) {
-//                long id = rs.getLong(COLUMN_ID);
-//                if (!_tmp.containsKey(id)) {
-//                    _tmp.put(id, new JEVisObjectSQL(_ds, rs));
-//                }
-//                _tmp.get(id).addRelationship(new JEVisRelationshipSQL(_ds, rs));
-//
-//            }
-//            children = new LinkedList<JEVisObject>(_tmp.values());
-//
-//        } catch (SQLException ex) {
-//            throw new JEVisException("Error while select Child objects", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
-//        } finally {
-//            if (rs != null) {
-//                try {
-//                    rs.close();
-//                } catch (SQLException ex) {
-//                    logger.debug("Error while closing DB connection: {}. ", ex);
-//                }
-//            }
-//
-//        }
-//
-//
-//        return children;
-//    }
-    private void findChildren(List<Long> children, Map<Long, Long> allID, Long parent) {
-        for (Map.Entry<Long, Long> entry : allID.entrySet()) {
-//            System.out.println("Key = " + entry.getKey() + ", Value = " + entry.getValue());
-            if (entry.getValue() == parent) {
-//                System.out.println("found child");
-                children.add(entry.getKey());
-                findChildren(children, allID, entry.getKey());
-            }
-
-        }
-
-    }
-
-    //TODO make a fast version , myabe travel the tree...hmm mybe not
-//    private List<Long> getAllChildren(long id) throws JEVisException {
-//        String sql = "select " + COLUMN_ID + "," + COLUMN_PARENT + " from " + TABLE;
-//
-//        PreparedStatement ps = null;
-//        ResultSet rs = null;
-//        Map<Long, Long> allID = new HashMap<Long, Long>();
-//        List<Long> children = new ArrayList<Long>();
-//
-//        try {
-//            ps = _connection.prepareStatement(sql);
-//
-//            rs = ps.executeQuery();
-//
-//
-//            while (rs.next()) {
-//
-//                //------------ Parent gibt es nicht mehr -----------------
-////                System.out.println("add to map: ID:"+rs.getLong(COLUMN_ID)+"  Parent:"+rs.getLong(COLUMN_PARENT));
-//
-//                allID.put(rs.getLong(COLUMN_ID), rs.getLong(COLUMN_PARENT));
-//
-//            }
-//
-//            findChildren(children, allID, id);
-//            return children;
-//
-//
-//        } catch (Exception ex) {
-//            ex.printStackTrace();
-//            //TODO error handling
-//            return children;
-//        } finally {
-//            if (rs != null) {
-//                try {
-//                    rs.close();
-//                } catch (SQLException e) { /*ignored*/ }
-//            }
-//            if (ps != null) {
-//                try {
-//                    ps.close();
-//                } catch (SQLException e) { /*ignored*/ }
-//            }
-//        }
-//    }
     public List<JEVisObject> getAllChildren(List<JEVisObject> objs, JEVisObject obj) {
         try {
             for (JEVisObject ch : obj.getChildren()) {
@@ -519,7 +506,7 @@ public class ObjectTable {
                 + " set " + COLUMN_DELETE + "=?"
                 + " where " + COLUMN_ID + " IN(?";
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.deleteObject");
 
         try {
 
@@ -580,7 +567,7 @@ public class ObjectTable {
         String sql = "select " + COLUMN_ID + " from " + TABLE
                 + " where " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ObjectTable.isUserUnique");
 
         try {
 

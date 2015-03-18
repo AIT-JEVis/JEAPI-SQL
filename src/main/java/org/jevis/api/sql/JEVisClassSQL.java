@@ -284,7 +284,7 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public List<JEVisType> getTypes() {
-        System.out.print(".");
+//        System.out.print(".");
         //TODO: reenable chaching?!
 //        if (_types == null) {
         if (_updateTypes || _types == null) {

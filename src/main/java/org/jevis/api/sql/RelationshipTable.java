@@ -57,7 +57,7 @@ public class RelationshipTable {
 
         PreparedStatement ps = null;
         List<JEVisRelationship> relations = new LinkedList<JEVisRelationship>();
-        _ds.addQuery();
+        _ds.addQuery("RelationshipTable.select");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -93,7 +93,7 @@ public class RelationshipTable {
 
         PreparedStatement ps = null;
         List<JEVisRelationship> relations = new LinkedList<JEVisRelationship>();
-        _ds.addQuery();
+        _ds.addQuery("RelationshipTable.selectForObject");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -128,7 +128,7 @@ public class RelationshipTable {
 
 //        System.out.println("insert rel start: " + start + " end: " + end + " type: " + type);
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("RelationshipTable.insert");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -167,7 +167,7 @@ public class RelationshipTable {
                 + " and " + COLUMN_TYPE + "=?";
 
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("RelationshipTable.delete");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -204,7 +204,7 @@ public class RelationshipTable {
 
         //TODO make it save with a prepared or so
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("RelationshipTable.deleteAll");
 
         try {
             String in = " IN(";

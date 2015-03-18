@@ -23,6 +23,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.LinkedList;
@@ -37,6 +38,7 @@ import org.jevis.api.JEVisInfo;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
 import org.jevis.api.JEVisUnit;
+import org.jevis.commons.JEVisUser;
 import org.jevis.commons.unit.JEVisUnitImp;
 import org.jevis.commons.utils.Benchmark;
 import org.slf4j.Logger;
@@ -67,7 +69,9 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private RelationshipTable _rt;
     private ClassRelationTable _crt;
     private int qCount = 0;//for benchmarking
+    private List<String> _qNames = new ArrayList<String>();
     private boolean ssl = false;
+    private JEVisUser _userObject;
 
     private List<JEVisObject> _objectChache = new ArrayList<JEVisObject>();
 
@@ -153,6 +157,14 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _user;
     }
 
+    public JEVisUser getCurrentUserObject() throws JEVisException {
+        return _userObject;
+    }
+
+    public void setCurrentUserObject(JEVisUser user) {
+        _userObject = user;
+    }
+
     /**
      *
      * @return
@@ -202,10 +214,9 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             getJEVisClasses();
             bench.printBechmark("Loading all classes");
 
-            _user = getObjectTable().loginUser(_jevisUsername, _jevisUserPW);
+            _user = getObjectTable().loginUser(this, _jevisUsername, _jevisUserPW);
             if (_user != null) {
                 logger.info("Login OK for {}", _jevisUsername);
-
             } else {
                 throw new JEVisException("User does not exist or password was wrong", JEVisExceptionCodes.UNAUTHORIZED);
             }
@@ -296,14 +307,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public JEVisObject getObject(Long id) throws JEVisException {
         try {
             JEVisObject obj = null;
-            JEVisObject cachedObj = getObjectFromChache(id);
-            if (cachedObj != null) {
-                return cachedObj;
+            if (SimpleObjectCache.getInstance().contains(id)) {
+                obj = SimpleObjectCache.getInstance().getObject(id);
+            } else {
+                obj = getObjectTable().getObject(id, true);
             }
 
-            obj = getObjectTable().getObject(id, true);
-            _objectChache.add(obj);
-
+//            _objectChache.add(obj);
             if (RelationsManagment.canRead(_user, obj)) {
                 return obj;
             } else {
@@ -348,10 +358,10 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public List<JEVisObject> getObjects(JEVisClass jevisClass, boolean inherits) throws JEVisException {
-//        System.out.println("getObjects: " + jevisClass);
 //        System.out.println("getObject by class: " + jevisClass.getName() + " heirs: " + inherits);
+        List<JEVisObject> returnObjs = new ArrayList<JEVisObject>();
 
-        getCount();
+//        getCount();
         List<JEVisClass> classes = new ArrayList<JEVisClass>();
         classes.add(jevisClass);
         if (inherits) {
@@ -361,7 +371,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
 
         List<JEVisObject> objs = getObjectTable().getObjects(classes);
-        List<JEVisObject> returnObjs = new ArrayList<JEVisObject>();
 
         //TODO: maybe its better to check this in the sql query?
         //Check if the user has permission
@@ -374,6 +383,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
 
         for (JEVisObject obj : objs) {
+//            System.out.print("o:" + obj.getName());
             for (JEVisRelationship rel : obj.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
 //                System.out.println("GetObject.rel: " + rel);
                 for (JEVisObject group : userGourps) {
@@ -391,8 +401,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
             }
         }
-        Date nowD = new Date();
-        System.out.println("time for userright check: " + (nowD.getTime() - startD.getTime()) + " ms and " + getCount());
 
 //        Collections.sort(objs);
         Collections.sort(returnObjs);
@@ -441,13 +449,23 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         return _crt;
     }
 
-    protected void addQuery() {
+    protected void addQuery(String name) {
         qCount++;
+
+        //disabled
+//        _qNames.add(name);
     }
 
     public int getCount() {
         int tmp = qCount;
         qCount = 0;
+
+        System.out.println("Requests:");
+        System.out.println("---");
+        System.out.println(Arrays.toString(_qNames.toArray()));
+        System.out.println("---");
+        _qNames = new ArrayList<String>();
+
         return tmp;
     }
 

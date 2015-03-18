@@ -61,7 +61,7 @@ public class ClassRelationTable {
                 + " and " + COLUMN_TYPE + "=?";
 
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ClassRelationTable.rel");
 
         try {
 
@@ -103,7 +103,7 @@ public class ClassRelationTable {
         PreparedStatement ps = null;
 
         try {
-            _ds.addQuery();
+            _ds.addQuery("ClassRelationTable.insert");
             ps = _connection.prepareStatement(sql);
             ps.setString(1, start.getName());
             ps.setString(2, end.getName());
@@ -150,7 +150,7 @@ public class ClassRelationTable {
                 + " and c1." + ClassTable.COLUMN_NAME + " is not null "
                 + " and c2." + ClassTable.COLUMN_NAME + " is not null ";
 
-        _ds.addQuery();
+        _ds.addQuery("ClassRelationTable.get");
         PreparedStatement ps = null;
         try {
 

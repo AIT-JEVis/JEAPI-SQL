@@ -22,7 +22,6 @@ package org.jevis.api.sql;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisObject;
 
 /**
@@ -46,13 +45,13 @@ public class SimpleObjectCache {
         return SimpleObjectCache.instance;
     }
 
-    public void addClass(JEVisObject object) {
+    public void addObject(JEVisObject object) {
 //        System.out.println("new Chache: " + idOne + "   " + jclass.getName());
         _cach.put(object.getID(), object);
     }
 
-    public JEVisObject getJEVisClass(String name) {
-        return _cach.get(name);
+    public JEVisObject getObject(long id) {
+        return _cach.get(id);
     }
 
     public boolean contains(Long id) {

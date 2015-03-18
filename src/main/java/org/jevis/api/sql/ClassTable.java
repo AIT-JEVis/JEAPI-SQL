@@ -75,7 +75,7 @@ public class ClassTable {
         String sql = "delete from " + TABLE + " where " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
         ResultSet rs = null;
-        _ds.addQuery();
+        _ds.addQuery("ClassTable.delete");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -110,7 +110,7 @@ public class ClassTable {
         PreparedStatement ps = null;
         List<JEVisClass> all = new ArrayList<JEVisClass>();
         List<JEVisClass> heirs = new ArrayList<JEVisClass>();
-        _ds.addQuery();
+        _ds.addQuery("ClassTable.getAllHeirs");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -152,7 +152,7 @@ public class ClassTable {
                 + " values(?)";
 
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ClassTable.insert");
 
         try {
 
@@ -201,7 +201,7 @@ public class ClassTable {
             }
             sql += " where " + COLUMN_NAME + "=?";
 
-            _ds.addQuery();
+            _ds.addQuery("ClassTable.update");
             PreparedStatement ps = _connection.prepareStatement(sql);
 
             int i = 1;
@@ -342,7 +342,7 @@ public class ClassTable {
                 + " limit 1 ";
 
         PreparedStatement ps = null;
-        _ds.addQuery();
+        _ds.addQuery("ClassTable.getObjectClass");
 
         try {
             ps = _connection.prepareStatement(sql);
@@ -375,6 +375,7 @@ public class ClassTable {
         return jClass;
     }
 
+    //TODO reimplementiert
     public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
         return SimpleClassCache.getInstance().getJEVisClass(name);
 //        
@@ -441,7 +442,7 @@ public class ClassTable {
 
         PreparedStatement ps = null;
         ResultSet rs = null;
-        _ds.addQuery();
+        _ds.addQuery("ClassTable.getAllObjectClasses");
 
         try {
             ps = _connection.prepareStatement(sql);
