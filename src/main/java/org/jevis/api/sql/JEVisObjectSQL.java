@@ -659,9 +659,8 @@ public class JEVisObjectSQL implements JEVisObject {
         //TODO: RelationsManagment need to checkt non permission relationships
         RelationsManagment.canDeleteRelationship(_ds.getCurrentUser(), rel);
 
-        System.out.println("can delete relationship: " + rel);
-        System.out.println("this object: " + _id);
-
+//        System.out.println("can delete relationship: " + rel);
+//        System.out.println("this object: " + _id);
         JEVisObjectSQL otherObject = (JEVisObjectSQL) rel.getOtherObject(this);
 
         boolean isOK = false;

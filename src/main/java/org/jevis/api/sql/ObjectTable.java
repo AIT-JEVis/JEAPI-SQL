@@ -241,26 +241,17 @@ public class ObjectTable {
                     JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
                     SimpleObjectCache.getInstance().addObject(newObj);
                     newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
-                    objects.add(newObj);
+                    if (!objects.contains(newObj)) {
+                        objects.add(newObj);
+                    }
                 } else {
                     JEVisObject cachedObj = SimpleObjectCache.getInstance().getObject(objectID);
                     ((JEVisObjectSQL) cachedObj).addRelationship(new JEVisRelationshipSQL(_ds, rs));
-                }
 
-                //without cache
-//                boolean isCache = false;
-//                for (JEVisObject ob : objects) {
-//                    if (ob.getID().equals(rs.getLong(COLUMN_ID))) {
-//                        isCache = true;
-//                        ((JEVisObjectSQL) ob).addRelationship(new JEVisRelationshipSQL(_ds, rs));
-//                    }
-//                }
-//
-//                if (!isCache) {
-//                    JEVisObjectSQL newObj = new JEVisObjectSQL(_ds, rs);
-//                    newObj.addRelationship(new JEVisRelationshipSQL(_ds, rs));
-//                    objects.add(newObj);
-//                }
+                    if (!objects.contains(cachedObj)) {
+                        objects.add(cachedObj);
+                    }
+                }
             }
 
             return objects;

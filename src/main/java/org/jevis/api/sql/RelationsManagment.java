@@ -185,11 +185,14 @@ public class RelationsManagment {
     }
 
     public static boolean isSysAdmin(JEVisObject user) throws JEVisException {
-        if (user.getJEVisClass().getName().equals(USER)) {
-            JEVisAttribute sysAdmin = user.getAttribute(USER_SYS_ADMIN);
-            return sysAdmin.getLatestSample().getValueAsBoolean();
-        }
-        return false;
+        JEVisDataSourceSQL ds = (JEVisDataSourceSQL) user.getDataSource();
+        return ds.getCurrentUserObject().isSysAdmin();
+
+//        if (user.getJEVisClass().getName().equals(USER)) {
+//            JEVisAttribute sysAdmin = user.getAttribute(USER_SYS_ADMIN);
+//            return sysAdmin.getLatestSample().getValueAsBoolean();
+//        }
+//        return false;
     }
 
     public static boolean isParentRelationship(JEVisClass parent, JEVisClass child) throws JEVisException {
@@ -256,7 +259,7 @@ public class RelationsManagment {
         try {
             JEVisObject currentUser = rel.getStartObject().getDataSource().getCurrentUser();
             JEVisUser juser = new JEVisUser(currentUser);
-            List<JEVisObject> userMembership = juser.getUserGroups();
+//            List<JEVisObject> userMembership = juser.getUserGroups();
 //            System.out.println("Usergroups: " + Arrays.toString(userMembership.toArray()));
 
             if (rel.getType() == JEVisConstants.ObjectRelationship.MEMBER_CREATE
@@ -275,7 +278,7 @@ public class RelationsManagment {
                 }
 
                 if (getObjectOwner(rel.getStartObject(), JEVisConstants.ObjectRelationship.MEMBER_DELETE).contains(currentUser)) {
-                    System.out.println("is owner-owner: " + rel);
+//                    System.out.println("is owner-owner: " + rel);
                     return true;
                 }
 

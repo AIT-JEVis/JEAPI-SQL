@@ -371,37 +371,40 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
 
         List<JEVisObject> objs = getObjectTable().getObjects(classes);
+        System.out.println("Total Object count: " + objs.size());
 
         //TODO: maybe its better to check this in the sql query?
         //Check if the user has permission
-        Date startD = new Date();
-
-        List<JEVisObject> userGourps = new ArrayList<JEVisObject>();
-        for (JEVisRelationship rel : getCurrentUser().getRelationships(JEVisConstants.ObjectRelationship.MEMBER_READ, JEVisConstants.Direction.FORWARD)) {
+//        Date startD = new Date();
+        if (getCurrentUserObject().isSysAdmin()) {//Sys Admins ignore userrights
+            returnObjs.addAll(objs);
+        } else {
+            List<JEVisObject> userGourps = new ArrayList<JEVisObject>();
+            for (JEVisRelationship rel : getCurrentUser().getRelationships(JEVisConstants.ObjectRelationship.MEMBER_READ, JEVisConstants.Direction.FORWARD)) {
 //            System.out.println("User is meber in group: " + rel.getOtherObject(getCurrentUser()).getID());
-            userGourps.add(rel.getOtherObject(getCurrentUser()));
-        }
+                userGourps.add(rel.getOtherObject(getCurrentUser()));
+            }
 
-        for (JEVisObject obj : objs) {
+            for (JEVisObject obj : objs) {
 //            System.out.print("o:" + obj.getName());
-            for (JEVisRelationship rel : obj.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
+                for (JEVisRelationship rel : obj.getRelationships(JEVisConstants.ObjectRelationship.OWNER, JEVisConstants.Direction.FORWARD)) {
 //                System.out.println("GetObject.rel: " + rel);
-                for (JEVisObject group : userGourps) {
+                    for (JEVisObject group : userGourps) {
 //                    System.out.println("Compare: " + group.getID() + " to " + rel.getEndObject().getID());
-                    if (group.getID().equals(rel.getEndObject().getID())) {
+                        if (group.getID().equals(rel.getEndObject().getID())) {
 //                        System.out.println("Is readable: " + rel);
-                        if (!returnObjs.contains(rel.getStartObject())) {
-                            returnObjs.add(obj);
-                        }
+                            if (!returnObjs.contains(rel.getStartObject())) {
+                                returnObjs.add(obj);
+                            }
 
-                    } else {
+                        } else {
 //                        System.out.println("--->knot");
+                        }
                     }
-                }
 
+                }
             }
         }
-
 //        Collections.sort(objs);
         Collections.sort(returnObjs);
 
