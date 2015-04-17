@@ -497,6 +497,7 @@ public class ObjectTable {
                 + " set " + COLUMN_DELETE + "=?"
                 + " where " + COLUMN_ID + " IN(?";
         PreparedStatement ps = null;
+        System.out.println("delete Object: " + obj);
         _ds.addQuery("ObjectTable.deleteObject");
 
         try {

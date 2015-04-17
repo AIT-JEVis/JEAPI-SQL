@@ -367,8 +367,8 @@ public class JEVisObjectSQL implements JEVisObject {
 
     }
 
-    protected boolean removeChild(JEVisObject object) {
-        for (JEVisObject obj : _childrenObj) {
+    protected boolean removeChild(JEVisObject object) throws JEVisException {
+        for (JEVisObject obj : getChildren()) {
             if (obj.equals(object)) {
                 _childrenObj.remove(obj);
                 return true;

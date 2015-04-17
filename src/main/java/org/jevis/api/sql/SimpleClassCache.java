@@ -19,7 +19,9 @@
  */
 package org.jevis.api.sql;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import org.jevis.api.JEVisClass;
@@ -36,6 +38,10 @@ public class SimpleClassCache {
 
     public SimpleClassCache() {
         _cach = new HashMap<String, JEVisClass>();
+    }
+
+    public List<JEVisClass> getAllClasses() {
+        return new ArrayList<JEVisClass>(_cach.values());
     }
 
     public static SimpleClassCache getInstance() {

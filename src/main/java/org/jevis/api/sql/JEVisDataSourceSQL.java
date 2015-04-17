@@ -73,13 +73,14 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private boolean ssl = false;
     private JEVisUser _userObject;
 
-    private List<JEVisObject> _objectChache = new ArrayList<JEVisObject>();
+    //workaround to keep the information that all classes are allready loaded
+    private boolean _allClassesLoaded = false;
 
     final private JEVisInfo _info = new JEVisInfo() {
 
         @Override
         public String getVersion() {
-            return "3.0.0";
+            return "3.0.5";
         }
 
         @Override
@@ -137,11 +138,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public boolean connect(String username, String password) throws JEVisException {
+        System.out.println("JEVisDataSourceSQL.connect: _dbHost: " + _dbHost + " _dbPort: " + _dbPort + " _dbSchema: " + _dbSchema + " _dbUser: " + _dbUser + "_dbPW: " + _dbPW);
         _jevisUsername = username;
         _jevisUserPW = password;
         if (connectToDB()) {
             System.out.println("DB connection is OK login user");
-            loginUser();//throw exeption is something is wrong 
+            loginUser();//throw exeption is something is wrong
             return true;
         } else {
             throw new JEVisException("Error DataSource is not connected ", 2134);
@@ -241,9 +243,16 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public List<JEVisClass> getJEVisClasses() throws JEVisException {
         try {
-            List<JEVisClass> jClass = getClassTable().getAllObjectClasses();
-            Collections.sort(jClass);
-            return jClass;
+
+            if (_allClassesLoaded) {
+                return SimpleClassCache.getInstance().getAllClasses();
+            } else {
+                List<JEVisClass> jClass = getClassTable().getAllObjectClasses();
+                Collections.sort(jClass);
+                _allClassesLoaded = true;
+                return jClass;
+            }
+
         } catch (SQLException ex) {
             throw new JEVisException("error while select object class from JEVis MySQL Datsource  ", JEVisExceptionCodes.DATASOURCE_FAILD, ex);
         }
@@ -292,15 +301,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         Collections.sort(roots);
 
         return roots;
-    }
-
-    private JEVisObject getObjectFromChache(Long id) {
-        for (JEVisObject obj : _objectChache) {
-            if (obj.getID().equals(id)) {
-                return obj;
-            }
-        }
-        return null;
     }
 
     @Override
