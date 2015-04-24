@@ -1,0 +1,58 @@
+/*
+ * To change this license header, choose License Headers in Project Properties.
+ * To change this template file, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package org.jevis.api.sql;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+import org.apache.commons.dbcp2.BasicDataSource;
+
+/**
+ *
+ * @author fs
+ */
+public class ConnectionFactory {
+
+    private static ConnectionFactory instance;
+    private BasicDataSource ds;
+
+    public ConnectionFactory() {
+
+    }
+
+    public void registerMySQLDriver(String host, String port, String schema, String dbUser, String dbPW) {
+
+        if (ds == null) {
+            System.out.println("Register Driver");
+            String conSring = "jdbc:mysql://" + host + ":" + port + "/" + schema + "?";
+//                    + "user=" + dbUser + "&password=" + dbPW;
+
+            ds = new BasicDataSource();
+            ds.setDriverClassName("com.mysql.jdbc.Driver");
+            ds.setUrl(conSring);
+            ds.setUsername(dbUser);
+            ds.setPassword(dbPW);
+            ds.setMaxTotal(100);
+        }
+
+    }
+
+    public Connection getConnection() throws SQLException {
+        if (ds != null) {
+            return ds.getConnection();
+        } else {
+            throw new SQLException("No database diver resgistert");
+        }
+
+    }
+
+    public static ConnectionFactory getInstance() {
+        if (ConnectionFactory.instance == null) {
+            ConnectionFactory.instance = new ConnectionFactory();
+        }
+        return ConnectionFactory.instance;
+    }
+
+}

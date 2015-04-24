@@ -24,7 +24,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisDataSource;
+import org.jevis.api.JEVisException;
 
 /**
  *
@@ -35,6 +39,11 @@ public class SimpleClassCache {
     public UUID idOne = UUID.randomUUID();
     private static SimpleClassCache instance;
     private static Map<String, JEVisClass> _cach;
+    private static JEVisDataSourceSQL _ds;
+
+    public void setDataSource(JEVisDataSourceSQL ds) {
+        _ds = ds;
+    }
 
     public SimpleClassCache() {
         _cach = new HashMap<String, JEVisClass>();
@@ -57,6 +66,16 @@ public class SimpleClassCache {
     }
 
     public JEVisClass getJEVisClass(String name) {
+        if (!_cach.containsKey(name)) {
+            try {
+                System.out.println("Class: " + name + " is not in cache");
+                JEVisClass newClass = _ds.getClassTable().getObjectClass(name);
+                _cach.put(newClass.getName(), newClass);
+            } catch (JEVisException ex) {
+                Logger.getLogger(SimpleClassCache.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+
         return _cach.get(name);
     }
 

@@ -25,7 +25,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
@@ -90,26 +89,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     };
 
     /**
-     * @deprecated @param db
-     * @param port
-     * @param schema
-     * @param user
-     * @param pw
-     * @param jevisUser not is use anymore
-     * @param jevisPW not is use anymore
-     * @throws JEVisException
-     */
-    public JEVisDataSourceSQL(String db, String port, String schema, String user, String pw, String jevisUser, String jevisPW) throws JEVisException {
-        _dbHost = db;
-        _dbPort = port;
-        _dbUser = user;
-        _dbPW = pw;
-        _dbSchema = schema;
-        _jevisUsername = jevisUser;
-        _jevisUserPW = jevisPW;
-    }
-
-    /**
      * Enable or disable the use of SSL. Do this befor using the connect()
      * function. SSL is disabled per default.
      *
@@ -138,10 +117,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public boolean connect(String username, String password) throws JEVisException {
-        System.out.println("JEVisDataSourceSQL.connect: _dbHost: " + _dbHost + " _dbPort: " + _dbPort + " _dbSchema: " + _dbSchema + " _dbUser: " + _dbUser + "_dbPW: " + _dbPW);
+        System.out.println("JEVisDataSourceSQL.connect: _dbHost: " + _dbHost + " _dbPort: " + _dbPort + " _dbSchema: " + _dbSchema + " _dbUser: " + _dbUser + "_dbPW: *****");
         _jevisUsername = username;
         _jevisUserPW = password;
-        if (connectToDB()) {
+        SimpleClassCache.getInstance().setDataSource(this);
+
+        if (connectDB()) {
             System.out.println("DB connection is OK login user");
             loginUser();//throw exeption is something is wrong
             return true;
@@ -171,19 +152,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
      *
      * @return
      */
-    public boolean connectToDB() {
+    public boolean connectDB() {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
 
-            String conSring = "jdbc:mysql://" + _dbHost + ":" + _dbPort + "/" + _dbSchema + "?"
-                    + "user=" + _dbUser + "&password=" + _dbPW;
-            if (ssl) {
-                conSring += "&verifyServerCertificate=false&requireSSL=true&useSSL=true";
-            }
+            ConnectionFactory.getInstance().registerMySQLDriver(_dbHost, _dbPort, _dbSchema, _dbUser, _dbPW);
 
-            logger.info("Using Connection string: {}", conSring);
-            DriverManager.setLoginTimeout(20);
-            _connect = DriverManager.getConnection(conSring);
+            _connect = ConnectionFactory.getInstance().getConnection();
 
             return _connect.isValid(2000);
 
@@ -210,12 +184,11 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         logger.info("Try to login user: {}", _jevisUsername);
 
         try {
-            Benchmark bench = new Benchmark();
-            System.out.println("Load all classes");
+//            Benchmark bench = new Benchmark();
+//            System.out.println("Load all classes");
 
-            getJEVisClasses();
-            bench.printBechmark("Loading all classes");
-
+//            getJEVisClasses();
+//            bench.printBechmark("Loading all classes");
             _user = getObjectTable().loginUser(this, _jevisUsername, _jevisUserPW);
             if (_user != null) {
                 logger.info("Login OK for {}", _jevisUsername);
@@ -231,8 +204,9 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public JEVisClass getJEVisClass(String name) throws JEVisException {
 //        System.out.println("DS.getJEVisClass: " + name);
-        if (SimpleClassCache.getInstance().contains(name)) {
-            getClassTable().getObjectClass(name, true);
+        if (!SimpleClassCache.getInstance().contains(name)) {
+            JEVisClass jclass = getClassTable().getObjectClass(name, false);
+
         }
 
         return SimpleClassCache.getInstance().getJEVisClass(name);
@@ -498,7 +472,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public boolean reconnect() throws JEVisException {
         System.out.println("Reconnect with :" + _jevisUsername + " // " + _jevisUserPW);
-        if (connectToDB()) {
+        if (connectDB()) {
             return connect(_jevisUsername, _jevisUserPW);
         } else {
             return false;

@@ -84,6 +84,7 @@ public class JEVisObjectSQL implements JEVisObject {
 //                SimpleClassCache.getInstance().addClass(new JEVisClassSQL(_ds, _class));
             }
             _classObj = SimpleClassCache.getInstance().getJEVisClass(_class);
+
             if (_classObj == null) {
                 System.out.println("++++++++++++++++++++++++++++++++++++ Missing class for " + _id + "   class: " + _class);
                 _classObj = new NullJEVisClass(_class);
@@ -115,6 +116,16 @@ public class JEVisObjectSQL implements JEVisObject {
     public JEVisClass getJEVisClass() throws JEVisException {
 //        if (isLink()) {
 //            return _linkedObject.getJEVisClass();
+//        }
+//        System.out.println("JEVIClass.class: " + _classObj.getClass());
+//        if (_classObj == null || _classObj.getClass().equals(NullJEVisClass.class)) {
+//            System.out.println("is null or NullClass");
+//
+//
+//            _classObj = _ds.getJEVisClass(_class);
+//            System.out.println("real class: " + _classObj.getClass());
+//        } else {
+//            System.out.println("class is OK");
 //        }
 
         return _classObj;
