@@ -263,15 +263,20 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             List<JEVisRelationship> root = RelationsManagment.getRelationByType(group, JEVisConstants.ObjectRelationship.ROOT);
             for (JEVisRelationship rel2 : root) {
                 JEVisObject obj = rel2.getOtherObject(group);
-                roots.add(obj);
+                if (!roots.contains(obj)) {
+                    roots.add(obj);
+                }
+
             }
         }
 
         for (JEVisRelationship rel : RelationsManagment.getRelationByType(_user, JEVisConstants.ObjectRelationship.ROOT)) {
-            roots.add(rel.getOtherObject(getCurrentUser()));
+            if (!roots.contains(rel.getOtherObject(getCurrentUser()))) {
+                roots.add(rel.getOtherObject(getCurrentUser()));
+            }
+
         }
 
-//        List<JEVisRelationship> groups = RelationsManagment.getRelationByType(getCurrentUser(), JEVisConstants.ObjectRelationship.MEMBER_READ);
         Collections.sort(roots);
 
         return roots;

@@ -34,6 +34,8 @@ import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisSample;
 import org.jevis.api.JEVisType;
 import org.jevis.api.JEVisUnit;
+import org.jevis.commons.dataprocessing.ProcessorObjectHandler;
+import org.jevis.commons.dataprocessing.Task;
 import org.jevis.commons.json.JsonUnit;
 import org.jevis.commons.unit.JEVisUnitImp;
 import org.joda.time.DateTime;
@@ -46,6 +48,9 @@ import org.joda.time.format.PeriodFormatter;
  * @author Florian Simon<florian.simon@openjevis.org>
  */
 public class JEVisAttributeSQL implements JEVisAttribute {
+
+    //workaround remove
+    List<JEVisSample> allSample;
 
     private String _name;
     private DateTime _minTS;
@@ -147,6 +152,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         try {
             SampleTable st = new SampleTable(_ds);
             List<JEVisSample> samples = st.getAll(this);
+
             return samples;
         } catch (Exception ex) {
             System.out.println("error while resiving samples: " + ex);
@@ -348,7 +354,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
         return buildSample(ts, getInputUnit().converteTo(unit, value), note);
     }
 
-    //TODO will this replace the other 
+    //TODO will this replace the other
     @Override
     public JEVisSample buildSample(DateTime ts, Object value) throws JEVisException {
         return buildSample(ts, value, "");

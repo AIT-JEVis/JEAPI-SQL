@@ -36,12 +36,12 @@ public class JEVisFileSQL implements JEVisFile {
 
     public JEVisFileSQL(JEVisSampleSQL sample) {
         _sample = sample;
-        _data=(byte[])sample.getValue();
+        _data = (byte[]) sample.getValue();
     }
 
     public void setBytes(byte[] data) {
         _sample.setValue(data);
-        _data=data;
+        _data = data;
     }
 
     public byte[] getBytes() {
@@ -59,8 +59,8 @@ public class JEVisFileSQL implements JEVisFile {
     }
 
     public void saveToFile(File file) throws IOException {
-        FileOutputStream fileOuputStream =
-                new FileOutputStream(file);
+        FileOutputStream fileOuputStream
+                = new FileOutputStream(file);
         fileOuputStream.write(_data);
         fileOuputStream.close();
     }

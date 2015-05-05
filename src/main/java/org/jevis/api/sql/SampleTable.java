@@ -34,6 +34,7 @@ import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisSample;
+import org.jevis.commons.utils.Benchmark;
 import org.joda.time.DateTime;
 
 /**
@@ -61,7 +62,7 @@ public class SampleTable {
     }
 
     public int insertSamples(JEVisAttribute attribute, List<JEVisSample> samples) throws JEVisException {
-        int perChunk = 100000;// care if value is bigger sql has a limit per transaktion. 1mio is teste only with small ints    
+        int perChunk = 100000;// care if value is bigger sql has a limit per transaktion. 1mio is teste only with small ints
         int count = 0;
         for (int i = 0; i < samples.size(); i += perChunk) {
             if ((i + perChunk) < samples.size()) {
@@ -167,6 +168,7 @@ public class SampleTable {
                 if (sample.getAttribute().getPrimitiveType() == JEVisConstants.PrimitiveType.FILE) {
 //                    System.out.println("Filename: "+sample.getValueAsFile().getFilename());
 //                    System.out.println("byte[]: "+sample.getValueAsFile().getBytes());
+                    System.out.println("insert filename: " + sample.getValueAsFile().getFilename());
                     ps.setString(++p, sample.getValueAsFile().getFilename());
                     ps.setBytes(++p, sample.getValueAsFile().getBytes());
 //                    ps.setString(++p, sample.getFilename());
@@ -319,6 +321,7 @@ public class SampleTable {
     }
 
     public List<JEVisSample> getAll(JEVisAttribute att) throws SQLException, UnsupportedEncodingException, JEVisException {
+//        System.out.println("SampleTable.getAll");
         List<JEVisSample> samples = new ArrayList<JEVisSample>();
 
         String sql = "select * from " + TABLE
@@ -330,11 +333,14 @@ public class SampleTable {
         ps.setLong(1, att.getObject().getID());
         ps.setString(2, att.getName());
 
+//        Benchmark bench = new Benchmark();
         ResultSet rs = ps.executeQuery();
+//        bench.printBenchmarkDetail("db respond getAllSample");
 
         while (rs.next()) {
             samples.add(new JEVisSampleSQL(_ds, rs, att));
         }
+//        bench.printBenchmarkDetail("JEAPI-SQL fro building javasample");
 
         return samples;
     }
