@@ -79,7 +79,7 @@ public class JEVisSampleSQL implements JEVisSample {
             } else if (value instanceof Integer) {
 //                System.out.println("sample is a Integer");
             } else if (value instanceof Boolean) {
-//                System.out.println("sample is a Integer");            
+//                System.out.println("sample is a Integer");
             } else if (value instanceof File) {
 //                System.out.println("sample is a file");
                 _file = new JEVisFileSQL(this);
@@ -228,7 +228,7 @@ public class JEVisSampleSQL implements JEVisSample {
                 return null;
             }
 
-            //DOTO: the DB give a string ? 
+            //DOTO: the DB give a string ?
             if (_tvalue instanceof String) {
                 if (((String) _tvalue).equals("1")) {
                     return true;
@@ -247,14 +247,14 @@ public class JEVisSampleSQL implements JEVisSample {
     }
 
 //    public byte[] valueToByte() {
-//         try{        
+//         try{
 //            if(getAttribute().getPrimitiveType()!=JEVisConstants.GENERIC_TYPE_FILE){
 //                 System.out.println("Error the primitive type of this Type is not byte");
 //                 return null;
 //            }
-//            
+//
 //            return (byte[])_tvalue;
-//        
+//
 //        }catch(Exception ex){
 //            ex.printStackTrace();
 //            return null;
@@ -399,12 +399,13 @@ public class JEVisSampleSQL implements JEVisSample {
         List<JEVisSample> samples = new LinkedList<JEVisSample>();
         samples.add(this);
         getAttribute().addSamples(samples);
+//        System.out.println("add sample: " + this);
         _hasChanged = false;
 
 //        //TODO: use an global SampleTable object so the not every sample need to create one->performace/memory
 //        SampleTable sb = new SampleTable(_ds);
 //
-//        //TODO: maybe implement an Update funktion but for now we delete and the insert the sample 
+//        //TODO: maybe implement an Update funktion but for now we delete and the insert the sample
 ////        sb.deleteSamples(_jAttribute, _ts, _ts);
 //        List samples = new ArrayList(); //TODO: maybe we need a new funktion to import without list
 //        samples.add(this);
@@ -434,12 +435,12 @@ public class JEVisSampleSQL implements JEVisSample {
 //    public JEVisManipulation getManipulation() {
 //        if(_jManIP==null){
 //            if(_manip==null){
-//                _jManIP = new JEVisManipulationSQL("");                
+//                _jManIP = new JEVisManipulationSQL("");
 //            }else{
-//                _jManIP = new JEVisManipulationSQL(_manip);     
+//                _jManIP = new JEVisManipulationSQL(_manip);
 //            }
 //        }
-//        
+//
 //        return _jManIP;
 //    }
 }

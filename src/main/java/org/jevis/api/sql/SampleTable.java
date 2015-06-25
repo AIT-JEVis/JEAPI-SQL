@@ -114,7 +114,7 @@ public class SampleTable {
                 + "(" + COLUMN_OBJECT + "," + COLUMN_ATTRIBUTE + "," + COLUMN_TIMESTAMP
                 + "," + COLUMN_VALUE + "," + COLUMN_MANID + "," + COLUMN_NOTE + "," + COLUMN_INSERT_TIMESTAMP
                 + "," + COLUMN_FILE_NAME + "," + COLUMN_FILE
-                + ") VALUES ";
+                + ") VALUES";
 
 //        System.out.println("SQL raw: "+sql);
         PreparedStatement ps = null;
@@ -129,11 +129,21 @@ public class SampleTable {
                 if (i < samples.size() - 1) {
                     build.append(", ");
                 } else {
-                    build.append(";");
+//                    build.append(";");
                 }
             }
 
-            ps = _connection.prepareStatement(build.toString());
+            String sqlWithUpdate = build.toString();
+            sqlWithUpdate = sqlWithUpdate += " ON DUPLICATE KEY UPDATE "
+                    + COLUMN_VALUE + "=VALUES(" + COLUMN_VALUE + "), "
+                    + COLUMN_FILE_NAME + "=VALUES(" + COLUMN_FILE_NAME + "), "
+                    + COLUMN_NOTE + "=VALUES(" + COLUMN_NOTE + "), "
+                    + COLUMN_FILE + "=VALUES(" + COLUMN_FILE + "), "
+                    + COLUMN_MANID + "=VALUES(" + COLUMN_MANID + ") ";
+
+            ps = _connection.prepareStatement(sqlWithUpdate);
+
+//            ps = _connection.prepareStatement(build.toString());
 //            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));//care tor TZ?
             Calendar cal = Calendar.getInstance();//care tor TZ?
             long now = cal.getTimeInMillis();
@@ -178,7 +188,7 @@ public class SampleTable {
                     ps.setNull(++p, Types.VARCHAR);
                 }
             }
-            //System.out.println("SamplDB.putSample SQL: \n" + ps);
+//            System.out.println("SamplDB.putSample SQL: \n" + ps);
 
             count = ps.executeUpdate();
             if (count > 0) {

@@ -176,6 +176,10 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     public int addSamples(List<JEVisSample> samples) throws JEVisException {
         //ToDo: check if sample are OK
 
+//        System.out.println("sample to import");
+//        for (JEVisSample sample : samples) {
+//            System.out.println("sample: " + sample);
+//        }
         SampleTable st = new SampleTable(_ds);
         int count = st.insertSamples(this, samples);
         System.out.println("imported " + count);
