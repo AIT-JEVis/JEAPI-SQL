@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2012 - 2013 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2012 - 2015 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *

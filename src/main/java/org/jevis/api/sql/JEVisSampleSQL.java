@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2009 - 2014 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2009 - 2015 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI.
  *
@@ -21,11 +21,13 @@ package org.jevis.api.sql;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.Blob;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.logging.Level;
 import javax.measure.unit.Unit;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
@@ -37,6 +39,7 @@ import org.jevis.api.JEVisSelection;
 import org.jevis.api.JEVisMultiSelection;
 import org.jevis.api.JEVisSample;
 import org.jevis.api.JEVisUnit;
+import org.jevis.commons.JEVisFileImp;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,19 +83,18 @@ public class JEVisSampleSQL implements JEVisSample {
 //                System.out.println("sample is a Integer");
             } else if (value instanceof Boolean) {
 //                System.out.println("sample is a Integer");
-            } else if (value instanceof File) {
-//                System.out.println("sample is a file");
-                _file = new JEVisFileSQL(this);
-                try {
-                    _file.loadFromFile((File) value);
-                } catch (IOException ex) {
-                    logger.error("Cannot load file fom Sample: {}", ex);
-                }
-
             } else if (value instanceof JEVisFile) {
 //                System.out.println("sample is a file");
-                _file = new JEVisFileSQL(this);
+//                _file = new JEVisFileSQL(this);
                 _file = (JEVisFile) value;
+            } else if (value instanceof File) {
+                File inputFile = (File) value;
+                try {
+                    JEVisFile jfile = new JEVisFileImp(inputFile.getName(), inputFile);
+                    _file = jfile;
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(JEVisSampleSQL.class.getName()).log(Level.SEVERE, null, ex);
+                }
 
             } else if (value instanceof JEVisSelection) {
 //                System.out.println("sample is a Selection");
@@ -122,9 +124,20 @@ public class JEVisSampleSQL implements JEVisSample {
             }
 
             if (rs.getBytes(SampleTable.COLUMN_FILE) != null) {
-                _fileBytes = rs.getBytes(SampleTable.COLUMN_FILE);
-                _tvalue = _fileBytes;
+                JEVisFile jFile = new JEVisFileImp();
+
+//                _fileBytes = rs.getBytes(SampleTable.COLUMN_FILE);
                 _filename = rs.getString(SampleTable.COLUMN_FILE_NAME);
+
+                Blob fileBlob = rs.getBlob(SampleTable.COLUMN_FILE);
+                _fileBytes = fileBlob.getBytes(1, (int) fileBlob.length());
+                fileBlob.free();
+
+                jFile.setBytes(_fileBytes);
+                jFile.setFilename(_filename);
+                _tvalue = jFile;
+                _file = jFile;
+
             }
 
         } catch (SQLException ex) {
@@ -268,12 +281,6 @@ public class JEVisSampleSQL implements JEVisSample {
                 return null;
             }
 
-            if (_file != null) {
-                return _file;
-            } else {
-                _file = new JEVisFileSQL(this);
-            }
-
             return _file;
 
         } catch (Exception ex) {
@@ -342,7 +349,7 @@ public class JEVisSampleSQL implements JEVisSample {
 //            _tvalue = tmp.longValue();
         } else {
             _tvalue = value;
-            logger.warn("Error the primitive type of this Type is not MultiSelection ");
+//            logger.warn("Error the primitive type of this Type is not MultiSelection ");
         }
         _hasChanged = true;
 

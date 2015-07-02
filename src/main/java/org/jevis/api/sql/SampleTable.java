@@ -20,6 +20,7 @@
  */
 package org.jevis.api.sql;
 
+import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -30,11 +31,11 @@ import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
+import static jdk.nashorn.internal.objects.NativeRegExp.source;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisSample;
-import org.jevis.commons.utils.Benchmark;
 import org.joda.time.DateTime;
 
 /**
@@ -139,7 +140,9 @@ public class SampleTable {
                     + COLUMN_FILE_NAME + "=VALUES(" + COLUMN_FILE_NAME + "), "
                     + COLUMN_NOTE + "=VALUES(" + COLUMN_NOTE + "), "
                     + COLUMN_FILE + "=VALUES(" + COLUMN_FILE + "), "
-                    + COLUMN_MANID + "=VALUES(" + COLUMN_MANID + ") ";
+                    + COLUMN_MANID + "=VALUES(" + COLUMN_MANID + "), "
+                    + COLUMN_FILE_NAME + "=VALUES(" + COLUMN_FILE_NAME + "),"
+                    + COLUMN_FILE + "=VALUES(" + COLUMN_FILE + ")";
 
             ps = _connection.prepareStatement(sqlWithUpdate);
 
@@ -176,13 +179,13 @@ public class SampleTable {
                 ps.setTimestamp(++p, new Timestamp(now));
 
                 if (sample.getAttribute().getPrimitiveType() == JEVisConstants.PrimitiveType.FILE) {
-//                    System.out.println("Filename: "+sample.getValueAsFile().getFilename());
-//                    System.out.println("byte[]: "+sample.getValueAsFile().getBytes());
                     System.out.println("insert filename: " + sample.getValueAsFile().getFilename());
                     ps.setString(++p, sample.getValueAsFile().getFilename());
-                    ps.setBytes(++p, sample.getValueAsFile().getBytes());
-//                    ps.setString(++p, sample.getFilename());
-//                    ps.setBytes(++p, sample.valueToByte());
+//                    ps.setBytes(++p, sample.getValueAsFile().getBytes());
+
+                    ByteArrayInputStream bis = new ByteArrayInputStream(sample.getValueAsFile().getBytes());
+                    ps.setBlob(++p, bis);
+
                 } else {
                     ps.setNull(++p, Types.BLOB);
                     ps.setNull(++p, Types.VARCHAR);
