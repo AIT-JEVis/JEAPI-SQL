@@ -20,7 +20,6 @@
 package org.jevis.api.sql;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisConfiguration;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisDataSource;
 import org.jevis.api.JEVisException;
@@ -38,8 +38,9 @@ import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
 import org.jevis.api.JEVisUnit;
 import org.jevis.commons.JEVisUser;
+import org.jevis.commons.config.CommonOptions;
+import org.jevis.commons.config.BasicConfiguration;
 import org.jevis.commons.unit.JEVisUnitImp;
-import org.jevis.commons.utils.Benchmark;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -75,11 +76,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     //workaround to keep the information that all classes are allready loaded
     private boolean _allClassesLoaded = false;
 
+    private JEVisConfiguration _configuration;
+
     final private JEVisInfo _info = new JEVisInfo() {
 
         @Override
         public String getVersion() {
-            return "3.0.5";
+            return "3.0.6";
         }
 
         @Override
@@ -97,6 +100,82 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public void enableSSL(boolean enable) {
         ssl = enable;
     }
+
+    public JEVisDataSourceSQL() {
+    }
+
+    @Override
+    public void init(JEVisConfiguration config) throws IllegalArgumentException {
+        setConfiguration(config);
+    }
+
+    @Override
+    public void setConfiguration(JEVisConfiguration config) {
+        _configuration = config;
+        _dbHost = _configuration.getOption(CommonOptions.DataSoure.HOST.getGroup(), CommonOptions.DataSoure.HOST.getKey()).getValue();
+        _dbPort = _configuration.getOption(CommonOptions.DataSoure.PORT.getGroup(), CommonOptions.DataSoure.PORT.getKey()).getValue();
+        _dbSchema = _configuration.getOption(CommonOptions.DataSoure.SCHEMA.getGroup(), CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
+        _dbUser = _configuration.getOption(CommonOptions.DataSoure.USERNAME.getGroup(), CommonOptions.DataSoure.USERNAME.getKey()).getValue();
+        _dbPW = _configuration.getOption(CommonOptions.DataSoure.PASSWORD.getGroup(), CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
+
+    }
+
+    @Override
+    public JEVisConfiguration getConfiguration() {
+        System.out.println("JEVisDataSourceSQL.getConfig");
+        if (_configuration != null) {
+            return _configuration;
+        } else {
+            //Return Default config
+            _configuration = new BasicConfiguration();
+            _configuration.addOption(CommonOptions.DataSoure.HOST, false);
+            _configuration.addOption(CommonOptions.DataSoure.PORT, false);
+            _configuration.addOption(CommonOptions.DataSoure.SCHEMA, false);
+            _configuration.addOption(CommonOptions.DataSoure.PASSWORD, false);
+            _configuration.addOption(CommonOptions.DataSoure.USERNAME, false);
+            _configuration.addOption(CommonOptions.DataSoure.CLASS, false);
+
+            setConfiguration(_configuration);
+
+            return _configuration;
+        }
+    }
+//
+//    @Override
+//    public void init(String[] args) throws IllegalArgumentException {
+//
+//        for (String s : args) {
+//            System.out.println("Arg: " + s);
+//        }
+//
+//        Options options = getOptions();
+//
+//        CommandLineParser parser = new DefaultParser();
+//        try {
+//            CommandLine line = parser.parse(options, args, false);
+//
+//            _dbHost = line.getOptionValue(StartOptions.JEVis.DataSource.HOST.getOpt(), "localhost");
+//            System.out.println("found hostname: " + _dbHost);
+//            _dbPort = line.getOptionValue(StartOptions.JEVis.DataSource.PORT.getOpt(), "3306");
+//            _dbSchema = line.getOptionValue(optSchema.getOpt(), "jevis");
+//            _dbUser = line.getOptionValue(StartOptions.JEVis.DataSource.USERNAME.getOpt(), "jevis");
+//            _dbPW = line.getOptionValue(StartOptions.JEVis.DataSource.PASSWORD.getOpt(), "jevis");
+//        } catch (ParseException ex) {
+//            ex.printStackTrace();
+//            HelpFormatter formatter = new HelpFormatter();
+//            formatter.setWidth(200);
+//            formatter.printHelp("Additonal JEVisDataSourceSQL options:", options);
+//
+////            throw new IllegalArgumentException("JEVisDataSourceSQL.init() failed because: " + ex.getMessage());
+//        }
+////        //TODO: error handling
+////        _dbHost = options.getOption(StartOptions.JEVis.DataSource.HOST.getOpt()).getValue();
+////        _dbPort = options.getOption(StartOptions.JEVis.DataSource.PORT.getOpt()).getValue();
+////        _dbSchema = options.getOption(optSchema.getOpt()).getValue();
+////        _dbUser = options.getOption(StartOptions.JEVis.DataSource.USERNAME.getOpt()).getValue();
+////        _dbPW = options.getOption(StartOptions.JEVis.DataSource.PASSWORD.getOpt()).getValue();
+//
+//    }
 
     /**
      *
@@ -117,13 +196,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public boolean connect(String username, String password) throws JEVisException {
-        System.out.println("JEVisDataSourceSQL.connect: _dbHost: " + _dbHost + " _dbPort: " + _dbPort + " _dbSchema: " + _dbSchema + " _dbUser: " + _dbUser + "_dbPW: *****");
+//        System.out.println("JEVisDataSourceSQL.connect: dbHost: " + _dbHost + " dbPort: " + _dbPort + " dbSchema: " + _dbSchema + " dbUser: " + _dbUser + "dbPW: *****");
         _jevisUsername = username;
         _jevisUserPW = password;
         SimpleClassCache.getInstance().setDataSource(this);
 
         if (connectDB()) {
-            System.out.println("DB connection is OK login user");
+//            System.out.println("DB connection is OK, login user");
             loginUser();//throw exeption is something is wrong
             return true;
         } else {
@@ -155,6 +234,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public boolean connectDB() {
         try {
 
+            System.out.println("connectDB: host: " + _dbHost + " port: " + _dbPort + " schema: " + _dbSchema + " user: " + _dbUser + " pw: " + _dbPW);
             ConnectionFactory.getInstance().registerMySQLDriver(_dbHost, _dbPort, _dbSchema, _dbUser, _dbPW);
 
             _connect = ConnectionFactory.getInstance().getConnection();
@@ -162,6 +242,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             return _connect.isValid(2000);
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             logger.error("Error while connecting to DB: {}", ex.getMessage());
             return false;
         }
