@@ -180,6 +180,10 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 //        for (JEVisSample sample : samples) {
 //            System.out.println("sample: " + sample);
 //        }
+        if (!RelationsManagment.canWrite(_ds.getCurrentUser(), _object)) {
+            throw new JEVisException("Insufficient user rights", 550);
+        }
+
         SampleTable st = new SampleTable(_ds);
         int count = st.insertSamples(this, samples);
         System.out.println("imported " + count);

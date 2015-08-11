@@ -159,7 +159,7 @@ public class ClassTable {
             ps = _connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, name);
 
-//        ps.setString(2, discription); 
+//        ps.setString(2, discription);
             System.out.println("putClass.sql: " + ps);
 //        int value = ps.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -331,12 +331,6 @@ public class ClassTable {
         System.out.println("getObjectClass() " + name);
         JEVisClass jClass = null;
 
-        //TODO:reenable cach disable cach
-//        if (cach) {
-//            if (_cach.containsKey(name)) {
-//                return _cach.get(name);
-//            }
-//        }
         String sql = "select * from " + TABLE
                 + " where  " + COLUMN_NAME + "=?"
                 + " limit 1 ";
@@ -378,8 +372,8 @@ public class ClassTable {
     //TODO reimplementiert
     public JEVisClass getObjectClass(String name, boolean cach) throws JEVisException {
         return SimpleClassCache.getInstance().getJEVisClass(name);
-//        
-//        
+//
+//
 //        System.out.println("getObjectClass() " + cach);
 //        JEVisClass jClass = null;
 //
