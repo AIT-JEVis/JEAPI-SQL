@@ -68,10 +68,10 @@ public class SimpleClassCache {
     public JEVisClass getJEVisClass(String name) {
         if (!_cach.containsKey(name)) {
             try {
-                System.out.println("Class: " + name + " is not in cache");
                 JEVisClass newClass = _ds.getClassTable().getObjectClass(name);
-                if(newClass == null)
+                if (newClass == null) {
                     return null;
+                }
                 _cach.put(newClass.getName(), newClass);
             } catch (JEVisException ex) {
                 Logger.getLogger(SimpleClassCache.class.getName()).log(Level.SEVERE, null, ex);

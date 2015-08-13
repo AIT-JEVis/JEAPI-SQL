@@ -68,14 +68,8 @@ public class JEVisClassSQL implements JEVisClass {
     private File _iconFile;
     private boolean _updateTypes = true;
     private DateTime _typeLastChanged = null;
+    private boolean _relationshipLoaded = false;
 
-//    public JEVisClassSQL(JEVisDataSourceSQL ds, String name) {
-//        _ds = ds;
-//        _name = name;
-//        isLoaded = false;
-//        System.out.println("JEVisClassSQL+() name:" + _name + "  UUID:" + idOne);
-//
-//    }
     public JEVisClassSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         _ds = ds;
         //todo parsing
@@ -284,9 +278,6 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public List<JEVisType> getTypes() {
-//        System.out.print(".");
-        //TODO: reenable chaching?!
-//        if (_types == null) {
         if (_updateTypes || _types == null) {
             _typeLastChanged = DateTime.now();
 //            System.out.println("Build type liste for: " + _name + " new date: " + _typeLastChanged + "  add: " + idOne);
@@ -431,7 +422,9 @@ public class JEVisClassSQL implements JEVisClass {
     }
 
     private List<JEVisClassRelationship> getFixedRelationships() throws JEVisException {
-        if (_relations == null) {
+//        if (_relations == null) {
+        if (!_relationshipLoaded) {
+
             _relations = _ds.getClassRelationshipTable().get(this);
 
             for (JEVisClassRelationship crel : _relations) {
@@ -444,14 +437,8 @@ public class JEVisClassSQL implements JEVisClass {
 //                    ex.printStackTrace();
                 }
             }
+            _relationshipLoaded = true;
 
-//            if (_inheritance != null) {
-//                List<JEVisClassRelationship> inheritRel = _inheritance.getRelationships();
-//                for (JEVisClassRelationship crel : inheritRel) {
-//                    ((JEVisClassRelationshipSQL) crel).setHeir(this);//TODO: make a save implementation
-//                }
-//                _relations.addAll(inheritRel);
-//            }
         }
 
         return _relations;
@@ -505,7 +492,6 @@ public class JEVisClassSQL implements JEVisClass {
             try {
                 //TODo: remove this workaround
                 JEVisClassSQL otherClass = (JEVisClassSQL) jclass;
-                System.out.println("JEVisClassSQL: " + otherClass);
                 otherClass._relations.add(newRel);
             } catch (Exception ex) {
                 ex.printStackTrace();

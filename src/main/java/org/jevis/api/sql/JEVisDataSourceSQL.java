@@ -28,18 +28,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.logging.Level;
 import org.jevis.api.JEVisClass;
-import org.jevis.api.JEVisConfiguration;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisDataSource;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisInfo;
 import org.jevis.api.JEVisObject;
+import org.jevis.api.JEVisOption;
 import org.jevis.api.JEVisRelationship;
 import org.jevis.api.JEVisUnit;
 import org.jevis.commons.JEVisUser;
 import org.jevis.commons.config.CommonOptions;
-import org.jevis.commons.config.BasicConfiguration;
 import org.jevis.commons.unit.JEVisUnitImp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +75,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     //workaround to keep the information that all classes are allready loaded
     private boolean _allClassesLoaded = false;
 
-    private JEVisConfiguration _configuration;
+    private List<JEVisOption> _configuration;
 
     final private JEVisInfo _info = new JEVisInfo() {
 
@@ -105,77 +104,38 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     }
 
     @Override
-    public void init(JEVisConfiguration config) throws IllegalArgumentException {
+    public void init(List<JEVisOption> config) throws IllegalArgumentException {
         setConfiguration(config);
     }
 
     @Override
-    public void setConfiguration(JEVisConfiguration config) {
-        _configuration = config;
-        _dbHost = _configuration.getOption(CommonOptions.DataSoure.HOST.getGroup(), CommonOptions.DataSoure.HOST.getKey()).getValue();
-        _dbPort = _configuration.getOption(CommonOptions.DataSoure.PORT.getGroup(), CommonOptions.DataSoure.PORT.getKey()).getValue();
-        _dbSchema = _configuration.getOption(CommonOptions.DataSoure.SCHEMA.getGroup(), CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
-        _dbUser = _configuration.getOption(CommonOptions.DataSoure.USERNAME.getGroup(), CommonOptions.DataSoure.USERNAME.getKey()).getValue();
-        _dbPW = _configuration.getOption(CommonOptions.DataSoure.PASSWORD.getGroup(), CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
+    public void setConfiguration(List<JEVisOption> config) {
+        for (JEVisOption opt : config) {
+            if (opt.getKey().equals(CommonOptions.DataSoure.DataSoure.getKey())) {
+                _dbHost = opt.getChildren(CommonOptions.DataSoure.HOST.getKey()).getValue();
+                _dbPort = opt.getChildren(CommonOptions.DataSoure.PORT.getKey()).getValue();
+                _dbSchema = opt.getChildren(CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
+                _dbUser = opt.getChildren(CommonOptions.DataSoure.USERNAME.getKey()).getValue();
+                _dbPW = opt.getChildren(CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
+            }
+        }
 
     }
 
     @Override
-    public JEVisConfiguration getConfiguration() {
-        System.out.println("JEVisDataSourceSQL.getConfig");
-        if (_configuration != null) {
-            return _configuration;
-        } else {
-            //Return Default config
-            _configuration = new BasicConfiguration();
-            _configuration.addOption(CommonOptions.DataSoure.HOST, false);
-            _configuration.addOption(CommonOptions.DataSoure.PORT, false);
-            _configuration.addOption(CommonOptions.DataSoure.SCHEMA, false);
-            _configuration.addOption(CommonOptions.DataSoure.PASSWORD, false);
-            _configuration.addOption(CommonOptions.DataSoure.USERNAME, false);
-            _configuration.addOption(CommonOptions.DataSoure.CLASS, false);
-
-            setConfiguration(_configuration);
-
-            return _configuration;
+    public List<JEVisOption> getConfiguration() {
+        boolean exists = false;
+        for (JEVisOption opt : _configuration) {
+            if (opt.getKey().equalsIgnoreCase(CommonOptions.DataSoure.DataSoure.getKey())) {
+                exists = true;
+            }
         }
+        if (!exists) {
+            _configuration.add(CommonOptions.DataSoure.DataSoure);
+        }
+
+        return _configuration;
     }
-//
-//    @Override
-//    public void init(String[] args) throws IllegalArgumentException {
-//
-//        for (String s : args) {
-//            System.out.println("Arg: " + s);
-//        }
-//
-//        Options options = getOptions();
-//
-//        CommandLineParser parser = new DefaultParser();
-//        try {
-//            CommandLine line = parser.parse(options, args, false);
-//
-//            _dbHost = line.getOptionValue(StartOptions.JEVis.DataSource.HOST.getOpt(), "localhost");
-//            System.out.println("found hostname: " + _dbHost);
-//            _dbPort = line.getOptionValue(StartOptions.JEVis.DataSource.PORT.getOpt(), "3306");
-//            _dbSchema = line.getOptionValue(optSchema.getOpt(), "jevis");
-//            _dbUser = line.getOptionValue(StartOptions.JEVis.DataSource.USERNAME.getOpt(), "jevis");
-//            _dbPW = line.getOptionValue(StartOptions.JEVis.DataSource.PASSWORD.getOpt(), "jevis");
-//        } catch (ParseException ex) {
-//            ex.printStackTrace();
-//            HelpFormatter formatter = new HelpFormatter();
-//            formatter.setWidth(200);
-//            formatter.printHelp("Additonal JEVisDataSourceSQL options:", options);
-//
-////            throw new IllegalArgumentException("JEVisDataSourceSQL.init() failed because: " + ex.getMessage());
-//        }
-////        //TODO: error handling
-////        _dbHost = options.getOption(StartOptions.JEVis.DataSource.HOST.getOpt()).getValue();
-////        _dbPort = options.getOption(StartOptions.JEVis.DataSource.PORT.getOpt()).getValue();
-////        _dbSchema = options.getOption(optSchema.getOpt()).getValue();
-////        _dbUser = options.getOption(StartOptions.JEVis.DataSource.USERNAME.getOpt()).getValue();
-////        _dbPW = options.getOption(StartOptions.JEVis.DataSource.PASSWORD.getOpt()).getValue();
-//
-//    }
 
     /**
      *

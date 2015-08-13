@@ -328,7 +328,7 @@ public class ClassTable {
 
     public JEVisClass getObjectClass(String name) throws JEVisException {
 
-        System.out.println("getObjectClass() " + name);
+//        System.out.println("getObjectClass() " + name);
         JEVisClass jClass = null;
 
         String sql = "select * from " + TABLE
