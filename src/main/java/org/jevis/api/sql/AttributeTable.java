@@ -19,6 +19,7 @@
  */
 package org.jevis.api.sql;
 
+import com.google.gson.Gson;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -52,6 +53,7 @@ public class AttributeTable {
     public final static String COLUMN_INPUT_RATE = "inputrate";
     public final static String COLUMN_DISPLAY_UNIT = "displayunit";
     public final static String COLUMN_DISPLAY_RATE = "displayrate";
+    public final static String COLUMN_OPTION = "opt";//option and options are already sql keywords
 
     private final JEVisDataSourceSQL _ds;
     private final Connection _connection;
@@ -66,8 +68,8 @@ public class AttributeTable {
     public void insert(JEVisType type, JEVisObject obj) {
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
-                + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
-                + ") values(?,?,?,?)";
+                + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT + "," + COLUMN_OPTION
+                + ") values(?,?,?,?,?)";
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -143,7 +145,7 @@ public class AttributeTable {
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"
-                + "," + COLUMN_DISPLAY_UNIT + "=?," + COLUMN_INPUT_UNIT + "=?," + COLUMN_DISPLAY_RATE + "=?," + COLUMN_INPUT_RATE + "=?"
+                + "," + COLUMN_DISPLAY_UNIT + "=?," + COLUMN_INPUT_UNIT + "=?," + COLUMN_DISPLAY_RATE + "=?," + COLUMN_INPUT_RATE + "=?, " + COLUMN_OPTION + "=?"
                 + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
 
         PreparedStatement ps = null;
@@ -172,10 +174,18 @@ public class AttributeTable {
             ps.setString(9, att.getDisplaySampleRate().toString());
             ps.setString(10, att.getInputSampleRate().toString());
 
-            //where
-            ps.setLong(11, att.getObject().getID());
-            ps.setString(12, att.getName());
+            if (att.getOptions() != null && !att.getOptions().isEmpty()) {
+                Gson gson = new Gson();
+                ps.setString(11, gson.toJson(att.getOptions()));
+            } else {
+                ps.setString(11, "");
+            }
 
+            //where
+            ps.setLong(12, att.getObject().getID());
+            ps.setString(13, att.getName());
+
+//            System.out.println("Attribute.update().sql: " + ps.toString());
             //TODO return this??
             int count = ps.executeUpdate();
 

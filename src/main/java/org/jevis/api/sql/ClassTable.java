@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 - 2013 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2015 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -18,7 +18,6 @@ package org.jevis.api.sql;
 
 import java.awt.Graphics;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
