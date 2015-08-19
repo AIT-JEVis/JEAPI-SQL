@@ -40,7 +40,6 @@ import org.jevis.api.JEVisType;
 import static org.jevis.api.sql.ObjectTable.COLUMN_ID;
 import static org.jevis.api.sql.ObjectTable.COLUMN_NAME;
 import static org.jevis.api.sql.ObjectTable.COLUMN_CLASS;
-import org.jevis.commons.NullJEVisClass;
 import org.joda.time.DateTime;
 
 import org.slf4j.Logger;
@@ -87,7 +86,6 @@ public class JEVisObjectSQL implements JEVisObject {
 
             if (_classObj == null) {
                 System.out.println("++++++++++++++++++++++++++++++++++++ Missing class for " + _id + "   class: " + _class);
-                _classObj = new NullJEVisClass(_class);
             }
 
 //            _classObj = new JEVisClassSQL(ds, _class);
