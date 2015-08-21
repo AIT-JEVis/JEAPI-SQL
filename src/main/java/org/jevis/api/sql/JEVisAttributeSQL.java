@@ -24,7 +24,6 @@ import com.google.gson.reflect.TypeToken;
 import java.lang.reflect.Type;
 import java.sql.ResultSet;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.List;
 import javax.measure.unit.Unit;
 import org.jevis.api.JEVisAttribute;
@@ -38,6 +37,7 @@ import org.jevis.api.JEVisSample;
 import org.jevis.api.JEVisType;
 import org.jevis.api.JEVisUnit;
 import org.jevis.commons.config.BasicOption;
+import org.jevis.commons.json.JsonOption;
 import org.jevis.commons.json.JsonUnit;
 import org.jevis.commons.unit.JEVisUnitImp;
 import org.joda.time.DateTime;
@@ -63,10 +63,6 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private long _sampleCount;
     private JEVisDataSourceSQL _ds;
     private boolean _hasChanged = false;
-//    private JEVisUnit _unit;
-//    private String _unitString = "";
-//    private String _altSymbol;
-
     private Period _inputRate = Period.ZERO;
     private Period _displayRate = Period.ZERO;
     private JEVisUnit _inputUnit = new JEVisUnitImp(Unit.ONE);
@@ -119,26 +115,31 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 }
             }
 
-//            System.out.println("Start parsing option");
             if (rs.getString(AttributeTable.COLUMN_OPTION) != null && !rs.getString(AttributeTable.COLUMN_OPTION).isEmpty()) {
                 Gson gson = new Gson();
-
-//                try {
-//                    BasicOption option = gson.fromJson(rs.getString(AttributeTable.COLUMN_OPTION), BasicOption.class);
-//                } catch (Exception ex) {
-//                    System.out.println("1");
-//                }
                 try {
-                    Type listType = new TypeToken<ArrayList<BasicOption>>() {
-                    }.getType();
-                    List<JEVisOption> option = gson.fromJson(rs.getString(AttributeTable.COLUMN_OPTION), listType);
-                    _options = option;
-                } catch (Exception ex) {
-                    System.out.println("2");
-                }
 
+                    Type listType = new TypeToken<ArrayList<JsonOption>>() {
+                    }.getType();
+
+                    List<JsonOption> option = gson.fromJson(rs.getString(AttributeTable.COLUMN_OPTION), listType);
+//                    System.out.println("SQl.option: [" + _name + "] " + rs.getString(AttributeTable.COLUMN_OPTION));
+                    _options = new ArrayList<JEVisOption>();
+//                    System.out.println("input.option.size(): " + option.size());
+
+                    for (JsonOption opt : option) {
+                        JEVisOption jevopt = new BasicOption(opt);
+//                        System.out.println("add option: " + jevopt.getKey());
+                        _options.add(jevopt);
+                    }
+
+//                    System.out.println("final option size: " + _options.size());
+//                    _options = option;
+                } catch (Exception ex) {
+                    System.out.println("error while parsing options: " + ex);
+//                    ex.printStackTrace();
+                }
             }
-//            System.out.println("end parsing option");
 
         } catch (Exception ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -512,12 +513,12 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     @Override
     public void addOption(JEVisOption option) {
-        for (JEVisOption opt : _options) {
-            if (opt.getKey().equalsIgnoreCase(option.getKey())) {
-                removeOption(opt);
-                break;
-            }
-        }
+//        for (JEVisOption opt : _options) {
+//            if (opt.getKey().equalsIgnoreCase(option.getKey())) {
+//                removeOption(opt);
+//                break;
+//            }
+//        }
 
         _options.add(option);
     }

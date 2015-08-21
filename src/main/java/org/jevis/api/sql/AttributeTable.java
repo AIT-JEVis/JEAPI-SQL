@@ -20,6 +20,8 @@
 package org.jevis.api.sql;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,7 +31,9 @@ import java.util.List;
 import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisObject;
+import org.jevis.api.JEVisOption;
 import org.jevis.api.JEVisType;
+import org.jevis.commons.json.JsonOption;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -176,7 +180,16 @@ public class AttributeTable {
 
             if (att.getOptions() != null && !att.getOptions().isEmpty()) {
                 Gson gson = new Gson();
-                ps.setString(11, gson.toJson(att.getOptions()));
+
+                Type listType = new TypeToken<ArrayList<JsonOption>>() {
+                }.getType();
+                List<JsonOption> opts = new ArrayList<JsonOption>();
+                for (JEVisOption option : att.getOptions()) {
+                    JsonOption jopt = new JsonOption(option);
+                    opts.add(jopt);
+                }
+                ps.setString(11, gson.toJson(opts, listType));
+
             } else {
                 ps.setString(11, "");
             }

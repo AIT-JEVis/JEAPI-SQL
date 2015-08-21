@@ -112,11 +112,11 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public void setConfiguration(List<JEVisOption> config) {
         for (JEVisOption opt : config) {
             if (opt.getKey().equals(CommonOptions.DataSoure.DataSoure.getKey())) {
-                _dbHost = opt.getChildren(CommonOptions.DataSoure.HOST.getKey()).getValue();
-                _dbPort = opt.getChildren(CommonOptions.DataSoure.PORT.getKey()).getValue();
-                _dbSchema = opt.getChildren(CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
-                _dbUser = opt.getChildren(CommonOptions.DataSoure.USERNAME.getKey()).getValue();
-                _dbPW = opt.getChildren(CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
+                _dbHost = opt.getOption(CommonOptions.DataSoure.HOST.getKey()).getValue();
+                _dbPort = opt.getOption(CommonOptions.DataSoure.PORT.getKey()).getValue();
+                _dbSchema = opt.getOption(CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
+                _dbUser = opt.getOption(CommonOptions.DataSoure.USERNAME.getKey()).getValue();
+                _dbPW = opt.getOption(CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
             }
         }
 
