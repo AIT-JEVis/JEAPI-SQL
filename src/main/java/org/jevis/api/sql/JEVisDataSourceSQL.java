@@ -75,13 +75,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     //workaround to keep the information that all classes are allready loaded
     private boolean _allClassesLoaded = false;
 
-    private List<JEVisOption> _configuration;
+    private List<JEVisOption> _configuration = new ArrayList<JEVisOption>();
 
     final private JEVisInfo _info = new JEVisInfo() {
 
         @Override
         public String getVersion() {
-            return "3.0.6";
+            return "3.0.7";
         }
 
         @Override
@@ -124,13 +124,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
 
     @Override
     public List<JEVisOption> getConfiguration() {
-        boolean exists = false;
-        for (JEVisOption opt : _configuration) {
-            if (opt.getKey().equalsIgnoreCase(CommonOptions.DataSoure.DataSoure.getKey())) {
-                exists = true;
-            }
-        }
-        if (!exists) {
+        if (_configuration.isEmpty()) {
             _configuration.add(CommonOptions.DataSoure.DataSoure);
         }
 

@@ -513,13 +513,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     @Override
     public void addOption(JEVisOption option) {
-//        for (JEVisOption opt : _options) {
-//            if (opt.getKey().equalsIgnoreCase(option.getKey())) {
-//                removeOption(opt);
-//                break;
-//            }
-//        }
-
+        //TODO: Check for duplicates?
         _options.add(option);
     }
 

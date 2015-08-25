@@ -72,8 +72,8 @@ public class AttributeTable {
     public void insert(JEVisType type, JEVisObject obj) {
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
-                + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT + "," + COLUMN_OPTION
-                + ") values(?,?,?,?,?)";
+                + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
+                + ") values(?,?,?,?)";
 
         try {
             PreparedStatement ps = _connection.prepareStatement(sql);
@@ -94,6 +94,7 @@ public class AttributeTable {
             ps.setString(4, unitJSON);
 
             int count = ps.executeUpdate();
+//            System.out.println("AttributeTable.insert: " + count);
 //            System.out.println("success");
         } catch (Exception ex) {
             ex.printStackTrace();
@@ -143,13 +144,13 @@ public class AttributeTable {
      * @throws JEVisException
      */
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
+        System.out.println("Update attribute: " + att.getName());
         String sql = "update " + TABLE
                 + " set "
-                //+ COLUMN_ALT_SYMBOL + "=?, " + COLUMN_UNIT + "=?, "//new
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
                 + COLUMN_MIN_TS + "=(select min(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
-                + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1)"
-                + "," + COLUMN_DISPLAY_UNIT + "=?," + COLUMN_INPUT_UNIT + "=?," + COLUMN_DISPLAY_RATE + "=?," + COLUMN_INPUT_RATE + "=?, " + COLUMN_OPTION + "=?"
+                + COLUMN_COUNT + "=(select count(*) from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1), "
+                + COLUMN_DISPLAY_UNIT + "=?," + COLUMN_INPUT_UNIT + "=?," + COLUMN_DISPLAY_RATE + "=?," + COLUMN_INPUT_RATE + "=?, " + COLUMN_OPTION + "=?"
                 + " where " + COLUMN_OBJECT + "=? and " + COLUMN_NAME + "=?";
 
         PreparedStatement ps = null;
@@ -161,15 +162,15 @@ public class AttributeTable {
             //unit
 //            ps.setString(1, att.getAlternativSymbol());
 //            ps.setString(2, att.getDisplayUnit().toString());
-            //1. sub
+            //1. sub (max)
             ps.setLong(1, att.getObject().getID());
             ps.setString(2, att.getName());
 
-            //2.sub
+            //2.sub (min)
             ps.setLong(3, att.getObject().getID());
             ps.setString(4, att.getName());
 
-            //3.sub
+            //3.sub (count)
             ps.setLong(5, att.getObject().getID());
             ps.setString(6, att.getName());
 
