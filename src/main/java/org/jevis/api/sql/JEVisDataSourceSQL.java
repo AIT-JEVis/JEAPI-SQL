@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 - 2014 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2015 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -187,8 +187,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
      */
     public boolean connectDB() {
         try {
-
-            System.out.println("connectDB: host: " + _dbHost + " port: " + _dbPort + " schema: " + _dbSchema + " user: " + _dbUser + " pw: " + _dbPW);
+            logger.debug("connectDB: host: " + _dbHost + " port: " + _dbPort + " schema: " + _dbSchema + " user: " + _dbUser + " pw: " + _dbPW);
             ConnectionFactory.getInstance().registerMySQLDriver(_dbHost, _dbPort, _dbSchema, _dbUser, _dbPW);
 
             _connect = ConnectionFactory.getInstance().getConnection();

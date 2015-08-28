@@ -397,14 +397,11 @@ public class JEVisSampleSQL implements JEVisSample {
     @Override
     public void commit() throws JEVisException {
         if (!_hasChanged) {
-            System.out.println("Nothing changed.. Abort ");
             return;
         }
         if (!RelationsManagment.canWrite(_ds.getCurrentUser(), getAttribute().getObject())) {
             throw new JEVisException("Insufficient user rights", 550);
         }
-
-        System.out.println("commiting changes");
 
         //wo do not use the direct way to cnadel the sample count
         List<JEVisSample> samples = new LinkedList<JEVisSample>();

@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2013 - 2013 Envidatec GmbH <info@envidatec.com>
+ * Copyright (C) 2013 - 2015 Envidatec GmbH <info@envidatec.com>
  *
  * This file is part of JEAPI-SQL.
  *
@@ -44,8 +44,11 @@ import org.joda.time.DateTime;
 import org.joda.time.Period;
 import org.joda.time.format.ISOPeriodFormat;
 import org.joda.time.format.PeriodFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
+ * The class implements the JEVIsAttribute and works with MySQL
  *
  * @author Florian Simon<florian.simon@openjevis.org>
  */
@@ -68,6 +71,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private JEVisUnit _inputUnit = new JEVisUnitImp(Unit.ONE);
     private JEVisUnit _displayUnit = new JEVisUnitImp(Unit.ONE);
     private List<JEVisOption> _options = new ArrayList<JEVisOption>();
+    private Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
 
     public JEVisAttributeSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
@@ -101,8 +105,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 try {
                     _displayUnit = new JEVisUnitImp(new Gson().fromJson(rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT), JsonUnit.class));
                 } catch (Exception ex) {
-                    System.out.println("could not parse display unit because: " + ex);
-                    System.out.println("UnitString: '" + rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT) + "'");
+                    logger.error("could not parse display unit because: " + ex);
+                    logger.error("UnitString: '" + rs.getString(AttributeTable.COLUMN_DISPLAY_UNIT) + "'");
                 }
             }
 
@@ -110,8 +114,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 try {
                     _inputUnit = new JEVisUnitImp(new Gson().fromJson(rs.getString(AttributeTable.COLUMN_INPUT_UNIT), JsonUnit.class));
                 } catch (Exception ex) {
-                    System.out.println("could not parse input unit because: " + ex);
-                    System.out.println("UnitString: '" + rs.getString(AttributeTable.COLUMN_INPUT_UNIT) + "'");
+                    logger.error("could not parse input unit because: " + ex);
+                    logger.error("UnitString: '" + rs.getString(AttributeTable.COLUMN_INPUT_UNIT) + "'");
                 }
             }
 
@@ -123,21 +127,15 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                     }.getType();
 
                     List<JsonOption> option = gson.fromJson(rs.getString(AttributeTable.COLUMN_OPTION), listType);
-//                    System.out.println("SQl.option: [" + _name + "] " + rs.getString(AttributeTable.COLUMN_OPTION));
                     _options = new ArrayList<JEVisOption>();
-//                    System.out.println("input.option.size(): " + option.size());
 
                     for (JsonOption opt : option) {
                         JEVisOption jevopt = new BasicOption(opt);
-//                        System.out.println("add option: " + jevopt.getKey());
                         _options.add(jevopt);
                     }
 
-//                    System.out.println("final option size: " + _options.size());
-//                    _options = option;
                 } catch (Exception ex) {
-                    System.out.println("error while parsing options: " + ex);
-//                    ex.printStackTrace();
+                    logger.error("error while parsing options: " + ex);
                 }
             }
 
@@ -199,19 +197,14 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     @Override
     public int addSamples(List<JEVisSample> samples) throws JEVisException {
-        //ToDo: check if sample are OK
 
-//        System.out.println("sample to import");
-//        for (JEVisSample sample : samples) {
-//            System.out.println("sample: " + sample);
-//        }
         if (!RelationsManagment.canWrite(_ds.getCurrentUser(), _object)) {
             throw new JEVisException("Insufficient user rights", 550);
         }
 
         SampleTable st = new SampleTable(_ds);
         int count = st.insertSamples(this, samples);
-        System.out.println("imported " + count);
+        logger.debug("imported samples" + count);
 
         //update count,min,max in attribute table
         //TODO: maybe its saver to query the acctual value from the DB i will take the fast way for now

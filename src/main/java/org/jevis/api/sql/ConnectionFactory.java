@@ -25,7 +25,6 @@ public class ConnectionFactory {
     public void registerMySQLDriver(String host, String port, String schema, String dbUser, String dbPW) {
 
         if (ds == null) {
-            System.out.println("Register Driver");
             String conSring = "jdbc:mysql://" + host + ":" + port + "/" + schema + "?";
 //                    + "user=" + dbUser + "&password=" + dbPW;
 

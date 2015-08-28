@@ -70,6 +70,7 @@ public class AttributeTable {
 
     //TODO: try-catch-finally
     public void insert(JEVisType type, JEVisObject obj) {
+        System.out.println("AttributeTable.insert");
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
                 + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
@@ -93,9 +94,10 @@ public class AttributeTable {
             ps.setString(3, unitJSON);
             ps.setString(4, unitJSON);
 
+            System.out.println("AttributeTable.insert: " + ps);
             int count = ps.executeUpdate();
-//            System.out.println("AttributeTable.insert: " + count);
-//            System.out.println("success");
+            System.out.println("AttributeTable.insert: " + count);
+            System.out.println("success");
         } catch (Exception ex) {
             ex.printStackTrace();
         }
@@ -144,7 +146,7 @@ public class AttributeTable {
      * @throws JEVisException
      */
     public void updateAttributeTS(JEVisAttribute att) throws JEVisException {
-        System.out.println("Update attribute: " + att.getName());
+//        System.out.println("Update attribute: " + att.getName());
         String sql = "update " + TABLE
                 + " set "
                 + COLUMN_MAX_TS + "=(select max(" + SampleTable.COLUMN_TIMESTAMP + ") from " + SampleTable.TABLE + " where " + SampleTable.COLUMN_OBJECT + "=?" + " and " + SampleTable.COLUMN_ATTRIBUTE + "=? limit 1),"
