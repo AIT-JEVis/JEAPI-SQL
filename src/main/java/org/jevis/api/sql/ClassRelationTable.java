@@ -66,10 +66,19 @@ public class ClassRelationTable {
         try {
 
             ps = _connection.prepareStatement(sql);
+
+            //TODO: remove this workaround
+            //sometime the related classes are already delete the relationship (most likely) but the Object is still in the memory
+            //The problem is related to the cache which should be removed in the future
+            if (rel.getStart() == null || rel.getEnd() == null) {
+                return false;
+            }
+
             ps.setString(1, rel.getStart().getName());
             ps.setString(2, rel.getEnd().getName());
             ps.setInt(3, rel.getType());
 
+            System.out.println("Delete.classrelationship: " + ps.toString());
             int count = ps.executeUpdate();
             if (count == 1) {
                 return true;
@@ -78,7 +87,7 @@ public class ClassRelationTable {
             }
 
         } catch (Exception ex) {
-            throw new JEVisException("Could not insert new ClassRelationship", 578246, ex);
+            throw new JEVisException("Could not delete new ClassRelationship", 578246, ex);
         } finally {
             if (ps != null) {
                 try {
@@ -140,7 +149,7 @@ public class ClassRelationTable {
         List<JEVisClassRelationship> relations = new ArrayList<JEVisClassRelationship>();
 //        String sql = "select * from " + TABLE
 //                + " where " + COLUMN_START + "=?"
-//                + " or " + COLUMN_END + "=?";       
+//                + " or " + COLUMN_END + "=?";
 
         //saver this will exclude not existion classes
         String sql = "select distinct " + TABLE + ".* from " + TABLE

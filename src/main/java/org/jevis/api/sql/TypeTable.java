@@ -143,7 +143,7 @@ public class TypeTable {
             ps.setString(1, type.getJEVisClass().getName());
             ps.setString(2, type.getName());
 
-//            System.out.println("Delete Type: " + type);
+            System.out.println("Delete Type: " + ps.toString());
             if (ps.executeUpdate() == 1) {
 //                System.out.println("true");
                 return true;

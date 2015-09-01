@@ -34,8 +34,11 @@ import java.util.List;
 import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 import org.jevis.api.JEVisClass;
+import org.jevis.api.JEVisClassRelationship;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
+import org.jevis.api.JEVisType;
+import org.jevis.commons.JEVisTypes;
 import org.slf4j.LoggerFactory;
 
 /**
@@ -70,20 +73,29 @@ public class ClassTable {
         }
     }
 
-    public boolean delete(JEVisClass jlas) throws JEVisException {
+    public boolean delete(JEVisClass jclass) throws JEVisException {
         String sql = "delete from " + TABLE + " where " + COLUMN_NAME + "=?";
         PreparedStatement ps = null;
         ResultSet rs = null;
         _ds.addQuery("ClassTable.delete");
 
         try {
-            ps = _connection.prepareStatement(sql);
-            ps.setString(1, jlas.getName());
+            for (JEVisType type : jclass.getTypes()) {
+                _ds.getTypeTable().detele(type);
+            }
 
+            for (JEVisClassRelationship rel : jclass.getRelationships()) {
+                _ds.getClassRelationshipTable().delete(rel);
+            }
+
+            ps = _connection.prepareStatement(sql);
+            ps.setString(1, jclass.getName());
+
+            System.out.println("delete.class: " + ps.toString());
             int count = ps.executeUpdate();
 
             if (count == 1) {
-                SimpleClassCache.getInstance().remove(jlas.getName());
+                SimpleClassCache.getInstance().remove(jclass.getName());
 
                 return true;
             } else {

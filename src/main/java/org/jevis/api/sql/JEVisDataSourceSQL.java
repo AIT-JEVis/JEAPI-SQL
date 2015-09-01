@@ -67,6 +67,8 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     private AttributeTable _at;
     private RelationshipTable _rt;
     private ClassRelationTable _crt;
+    private TypeTable _tt;
+
     private int qCount = 0;//for benchmarking
     private List<String> _qNames = new ArrayList<String>();
     private boolean ssl = false;
@@ -443,6 +445,13 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
             _rt = new RelationshipTable(this);
         }
         return _rt;
+    }
+
+    protected TypeTable getTypeTable() throws JEVisException {
+        if (_tt == null) {
+            _tt = new TypeTable(this);
+        }
+        return _tt;
     }
 
     @Override
