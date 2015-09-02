@@ -81,7 +81,14 @@ public class ClassTable {
 
         try {
             for (JEVisType type : jclass.getTypes()) {
-                _ds.getTypeTable().detele(type);
+                if (jclass.getInheritance() != null) {
+                    if (jclass.getInheritance().getType(type.getName()) == null) {
+                        _ds.getTypeTable().detele(type);
+                    }
+                } else {
+                    _ds.getTypeTable().detele(type);
+                }
+
             }
 
             for (JEVisClassRelationship rel : jclass.getRelationships()) {
