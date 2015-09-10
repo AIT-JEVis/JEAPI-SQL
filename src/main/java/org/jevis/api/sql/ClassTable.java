@@ -38,7 +38,6 @@ import org.jevis.api.JEVisClassRelationship;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
 import org.jevis.api.JEVisType;
-import org.jevis.commons.JEVisTypes;
 import org.slf4j.LoggerFactory;
 
 /**
