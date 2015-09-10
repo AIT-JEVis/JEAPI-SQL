@@ -72,6 +72,7 @@ public class JEVisAttributeSQL implements JEVisAttribute {
     private JEVisUnit _displayUnit = new JEVisUnitImp(Unit.ONE);
     private List<JEVisOption> _options = new ArrayList<JEVisOption>();
     private Logger logger = LoggerFactory.getLogger(JEVisDataSourceSQL.class);
+    private int _orgHash = 0;
 
     public JEVisAttributeSQL(JEVisDataSourceSQL ds, ResultSet rs) throws JEVisException {
         try {
@@ -138,6 +139,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                     logger.error("error while parsing options: " + ex);
                 }
             }
+
+            _orgHash = hashCodeChange();
 
         } catch (Exception ex) {
             throw new JEVisException("Cannot parse Object", JEVisExceptionCodes.DATASOURCE_FAILD_MYSQL, ex);
@@ -240,7 +243,27 @@ public class JEVisAttributeSQL implements JEVisAttribute {
 
     @Override
     public boolean hasChanged() {
-        return _hasChanged = true;
+//        return _hasChanged = true;
+        //Test, may be an easy way to detect if this object changed
+        int newHash = hashCodeChange();
+        return newHash != _orgHash;
+
+    }
+
+    public int hashCodeChange() {
+        int hash = 7;
+        hash = 67 * hash + (this._name != null ? this._name.hashCode() : 0);
+        hash = 67 * hash + (this._minTS != null ? this._minTS.hashCode() : 0);
+        hash = 67 * hash + (this._maxTS != null ? this._maxTS.hashCode() : 0);
+        hash = 67 * hash + (int) (this._objectID ^ (this._objectID >>> 32));
+        hash = 67 * hash + (this._period != null ? this._period.hashCode() : 0);
+        hash = 67 * hash + (int) (this._sampleCount ^ (this._sampleCount >>> 32));
+        hash = 67 * hash + (this._inputRate != null ? this._inputRate.hashCode() : 0);
+        hash = 67 * hash + (this._displayRate != null ? this._displayRate.hashCode() : 0);
+        hash = 67 * hash + (this._inputUnit != null ? this._inputUnit.hashCode() : 0);
+        hash = 67 * hash + (this._displayUnit != null ? this._displayUnit.hashCode() : 0);
+        hash = 67 * hash + (this._options != null ? this._options.hashCode() : 0);
+        return hash;
     }
 
     @Override
@@ -254,6 +277,8 @@ public class JEVisAttributeSQL implements JEVisAttribute {
                 _maxTS = att.getTimestampFromLastSample();
             }
         }
+
+        _orgHash = hashCodeChange();
 
     }
 

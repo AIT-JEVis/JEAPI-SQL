@@ -190,6 +190,7 @@ public class AttributeTable {
                 for (JEVisOption option : att.getOptions()) {
                     JsonOption jopt = new JsonOption(option);
                     opts.add(jopt);
+
                 }
                 ps.setString(11, gson.toJson(opts, listType));
 
