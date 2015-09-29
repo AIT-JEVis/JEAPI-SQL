@@ -113,12 +113,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public void setConfiguration(List<JEVisOption> config) {
         for (JEVisOption opt : config) {
-            if (opt.getKey().equals(CommonOptions.DataSoure.DataSoure.getKey())) {
-                _dbHost = opt.getOption(CommonOptions.DataSoure.HOST.getKey()).getValue();
-                _dbPort = opt.getOption(CommonOptions.DataSoure.PORT.getKey()).getValue();
-                _dbSchema = opt.getOption(CommonOptions.DataSoure.SCHEMA.getKey()).getValue();
-                _dbUser = opt.getOption(CommonOptions.DataSoure.USERNAME.getKey()).getValue();
-                _dbPW = opt.getOption(CommonOptions.DataSoure.PASSWORD.getKey()).getValue();
+            if (opt.getKey().equals(CommonOptions.DataSource.DataSource.getKey())) {
+                _dbHost = opt.getOption(CommonOptions.DataSource.HOST.getKey()).getValue();
+                _dbPort = opt.getOption(CommonOptions.DataSource.PORT.getKey()).getValue();
+                _dbSchema = opt.getOption(CommonOptions.DataSource.SCHEMA.getKey()).getValue();
+                _dbUser = opt.getOption(CommonOptions.DataSource.USERNAME.getKey()).getValue();
+                _dbPW = opt.getOption(CommonOptions.DataSource.PASSWORD.getKey()).getValue();
             }
         }
 
@@ -127,7 +127,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     @Override
     public List<JEVisOption> getConfiguration() {
         if (_configuration.isEmpty()) {
-            _configuration.add(CommonOptions.DataSoure.DataSoure);
+            _configuration.add(CommonOptions.DataSource.DataSource);
         }
 
         return _configuration;
