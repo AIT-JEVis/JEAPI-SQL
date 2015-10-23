@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.jevis.api.JEVisClass;
@@ -46,7 +47,8 @@ public class SimpleClassCache {
     }
 
     public SimpleClassCache() {
-        _cach = new HashMap<String, JEVisClass>();
+//        _cach = new HashMap<String, JEVisClass>();
+        _cach = new ConcurrentHashMap<String, JEVisClass>();
     }
 
     public List<JEVisClass> getAllClasses() {

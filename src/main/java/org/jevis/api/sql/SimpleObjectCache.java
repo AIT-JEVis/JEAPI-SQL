@@ -19,9 +19,9 @@
  */
 package org.jevis.api.sql;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import org.jevis.api.JEVisObject;
 
 /**
@@ -35,7 +35,8 @@ public class SimpleObjectCache {
     private static Map<Long, JEVisObject> _cach;
 
     public SimpleObjectCache() {
-        _cach = new HashMap<Long, JEVisObject>();
+//        _cach = new HashMap<Long, JEVisObject>();
+        _cach = new ConcurrentHashMap<Long, JEVisObject>();
     }
 
     public static SimpleObjectCache getInstance() {
