@@ -20,18 +20,14 @@
 package org.jevis.api.sql;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.logging.Level;
-import org.jevis.api.JEVisAttribute;
 import org.jevis.api.JEVisClass;
 import org.jevis.api.JEVisClassRelationship;
 import org.jevis.api.JEVisConstants;
 import org.jevis.api.JEVisObject;
 import org.jevis.api.JEVisRelationship;
 import static org.jevis.api.JEVisConstants.ObjectRelationship.*;
-import static org.jevis.api.JEVisConstants.Class.*;
-import static org.jevis.api.JEVisConstants.Attribute.*;
 import static org.jevis.api.JEVisConstants.ClassRelationship.*;
 import org.jevis.api.JEVisException;
 import org.jevis.api.JEVisExceptionCodes;
@@ -125,7 +121,7 @@ public class RelationsManagment {
             for (JEVisRelationship or : object.getRelationships()) {
                 for (JEVisRelationship ur : userMemberships) {
 
-                    //is the Object Owner end the same as the user membership end                
+                    //is the Object Owner end the same as the user membership end
                     logger.debug("object.owner[{}]==user.membership[{}]", ur.getEndObject().getID(), or.getEndObject().getID());
                     if (ur.getEndObject().getID().equals(or.getEndObject().getID())) {
                         if (ur.isType(type)) {

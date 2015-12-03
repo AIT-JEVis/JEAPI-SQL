@@ -118,7 +118,7 @@ public class ClassRelationTable {
             ps.setString(2, end.getName());
             ps.setInt(3, type);
 
-            System.out.println("JEVisClassRelationship.insert: " + ps);
+//            System.out.println("JEVisClassRelationship.insert: " + ps);
             int count = ps.executeUpdate();
             if (count > 0) {
                 //TODO: maybe fetch from Db to be save
@@ -175,6 +175,7 @@ public class ClassRelationTable {
             }
 
         } catch (Exception ex) {
+            ex.printStackTrace();
             throw new JEVisException("Error while fetching ClassRelationship", 7390562, ex);
         } finally {
             if (ps != null) {

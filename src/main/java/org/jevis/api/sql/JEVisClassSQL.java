@@ -59,7 +59,7 @@ public class JEVisClassSQL implements JEVisClass {
     private String _name = "";
     private boolean isLoaded = false;
     private List<JEVisType> _types;
-    private List<JEVisClassRelationship> _relations;
+    private List<JEVisClassRelationship> _relations = new ArrayList<JEVisClassRelationship>();
     private String _oldName = null;
     private boolean _hasChanged = false;
     private boolean _unique;
@@ -316,13 +316,12 @@ public class JEVisClassSQL implements JEVisClass {
                 _updateTypes = true;
                 for (JEVisType t : getTypes()) {
                     if (t.getName().equals(name)) {
-                        System.out.println("return new Type: " + t);
+//                        System.out.println("return new Type: " + t);
 
                         return t;
                     }
                 }
             }
-            System.out.println("return null type");
             return null;
 
         } catch (Exception ex) {
@@ -334,13 +333,13 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public void commit() throws JEVisException {
-        System.out.println("JEVisClass.commit()");
+//        System.out.println("JEVisClass.commit()");
         if (!RelationsManagment.isSysAdmin(_ds.getCurrentUser())) {
             throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
         }
 
         if (!_hasChanged) {
-            System.out.println("Nothing changed.. Abort ");
+//            System.out.println("Nothing changed.. Abort ");
             return;
         }
 
@@ -479,7 +478,7 @@ public class JEVisClassSQL implements JEVisClass {
 
     @Override
     public JEVisClassRelationship buildRelationship(JEVisClass jclass, int type, int direction) throws JEVisException {
-        System.out.println("buildRelationship: this:" + this.getName() + " to-class: " + jclass + "  type: " + type + "  direction: " + direction);
+//        System.out.println("buildRelationship: this:" + this.getName() + " to-class: " + jclass + "  type: " + type + "  direction: " + direction);
         JEVisClassRelationship newRel = null;
         if (direction == JEVisConstants.Direction.BACKWARD) {
             newRel = _ds.getClassRelationshipTable().insert(jclass, this, type);
@@ -490,7 +489,7 @@ public class JEVisClassSQL implements JEVisClass {
         if (newRel != null && _relations != null) {
             _relations.add(newRel);
             try {
-                //TODo: remove this workaround
+                //TODo: replace this workaround
                 JEVisClassSQL otherClass = (JEVisClassSQL) jclass;
                 otherClass._relations.add(newRel);
             } catch (Exception ex) {

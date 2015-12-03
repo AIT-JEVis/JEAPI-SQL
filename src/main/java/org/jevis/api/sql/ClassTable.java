@@ -177,9 +177,8 @@ public class ClassTable {
             ps.setString(1, name);
 
 //        ps.setString(2, discription);
-            System.out.println("putClass.sql: " + ps);
+//            System.out.println("putClass.sql: " + ps);
 //        int value = ps.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
-
             int value = ps.executeUpdate();
             if (value == 1) {
                 getObjectClass(name);
@@ -205,10 +204,10 @@ public class ClassTable {
 
     public boolean update(JEVisClass jclass, String oldName) throws JEVisException {
 
-        System.out.println("#######");
-        System.out.println("jclass.name: " + jclass);
-
-        System.out.println("ClassTable.update+ " + ((JEVisClassSQL) jclass).getFile());
+//        System.out.println("#######");
+//        System.out.println("jclass.name: " + jclass);
+//
+//        System.out.println("ClassTable.update+ " + ((JEVisClassSQL) jclass).getFile());
         try {
             String sql = "update " + TABLE
                     + " set " + COLUMN_DESCRIPTION + "=?," + COLUMN_NAME + "=?," + COLUMN_UNIQUE + "=?";// + COLUMN_ICON + "=?"
@@ -234,7 +233,7 @@ public class ClassTable {
                 FileInputStream fis = new FileInputStream(file);
                 ps.setBinaryStream(i++, fis, (int) file.length());
             } else if (jclass.getIcon() != null) {
-                System.out.println("usinf icon");
+//                System.out.println("usinf icon");
                 ByteArrayOutputStream os = new ByteArrayOutputStream();
                 ImageIO.write(jclass.getIcon(), "gif", os);
                 InputStream is = new ByteArrayInputStream(os.toByteArray());
@@ -267,15 +266,14 @@ public class ClassTable {
 //
 //                ps.setString(4, jclass.getName());
 //            }
-            System.out.println("update class: " + ps);
-
+//            System.out.println("update class: " + ps);
             int res = ps.executeUpdate();
 
             //Check if the name changed, if yes we have to change all existing JEVisObjects.....do we want that?
             if (res == 1) {
                 if (!oldName.equals(jclass.getName())) {
                     //------------------ Update exintings objects
-                    System.out.println("update Existing JEVis Objects");
+//                    System.out.println("update Existing JEVis Objects");
                     String updateObject = "update " + ObjectTable.TABLE
                             + " set " + ObjectTable.COLUMN_CLASS + "=?"
                             + " where " + ObjectTable.COLUMN_CLASS + "=?";
@@ -289,7 +287,7 @@ public class ClassTable {
                     }
 
                     //------------------- Update existing Valid Parents
-                    System.out.println("update Existing valid JEVis parents");
+//                    System.out.println("update Existing valid JEVis parents");
                     String updateValid = "update " + ClassRelationTable.TABLE
                             + " set " + ClassRelationTable.COLUMN_START + "=?"
                             + " where " + ClassRelationTable.COLUMN_START + "=?";

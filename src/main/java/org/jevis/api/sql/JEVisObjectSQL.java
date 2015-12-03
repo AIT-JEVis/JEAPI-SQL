@@ -431,13 +431,13 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public JEVisObject buildObject(String name, JEVisClass jclass) throws JEVisException {
-        System.out.println("buildObject: " + name + " | " + jclass);
+//        System.out.println("buildObject: " + name + " | " + jclass);
 
         //TODO: is this still nessasary?
 //        if (getJEVisClass().getName().equals(CommonClasses.LINK.NAME)) {
 //            throw new JEVisException("Can not create an object under an Link", 85393);
 //        }
-        System.out.println("Can create: " + RelationsManagment.canCreate(_ds.getCurrentUser(), this));
+//        System.out.println("Can create: " + RelationsManagment.canCreate(_ds.getCurrentUser(), this));
         if (RelationsManagment.canCreate(_ds.getCurrentUser(), this)) {
 
             if (canCreateHere(jclass)) {
@@ -447,7 +447,7 @@ public class JEVisObjectSQL implements JEVisObject {
                         throw new JEVisException("Can not create User with this name. The User has to be unique on the System", 85392);
                     }
                 }
-                System.out.println("insert");
+//                System.out.println("insert");
                 return insert(name, jclass);
 
             } else {
@@ -710,22 +710,16 @@ public class JEVisObjectSQL implements JEVisObject {
 
     @Override
     public boolean isAllowedUnder(JEVisObject otherObject) throws JEVisException {
-//        if (isLink() && otherObject.getJEVisClass().equals(_ds.getJEVisClass(CommonClasses.LINK.NAME))) {
-//            return true;
-//        } else if (isLink() && otherObject.isLink()) {
+
+        return getJEVisClass().isAllowedUnder(otherObject.getJEVisClass());
+
+//        for (JEVisClassRelationship rel : getJEVisClass().getRelationships(JEVisConstants.ClassRelationship.OK_PARENT, JEVisConstants.Direction.FORWARD)) {
+//            if (rel.getEnd().equals(otherObject.getJEVisClass())) {
+//                return true;
 //
+//            }
 //        }
-
-        for (JEVisClassRelationship rel : getJEVisClass().getRelationships(JEVisConstants.ClassRelationship.OK_PARENT, JEVisConstants.Direction.FORWARD)) {
-//            System.out.println("isAllowedUnder: " + rel);
-//            System.out.println("Rel End: " + rel.getEnd());
-            if (rel.getEnd().equals(otherObject.getJEVisClass())) {
-//                System.out.println("is Allowed");
-                return true;
-
-            }
-        }
-        return false;
+//        return false;
     }
 
     /**
@@ -857,7 +851,7 @@ public class JEVisObjectSQL implements JEVisObject {
                 }
             }
         } catch (Exception ex) {
-            System.out.println("Error 72151942143:  " + ex.getMessage());
+            System.out.println("Error 72151942143:  getAllowedChildrenClasses() for '" + _name + "' " + ex.getMessage());
         }
         return allowedClasses;
 

@@ -306,7 +306,7 @@ public class ObjectTable {
                     int relType = JEVisConstants.ObjectRelationship.PARENT;//not very save
 //                    if (RelationsManagment.isParentRelationship(parent.getJEVisClass(), jclass)) {
 //                        relType = JEVisConstants.ObjectRelationship.PARENT;
-//                    } else 
+//                    } else
 
                     if (RelationsManagment.isNestedRelationship(parent.getJEVisClass(), jclass)) {
                         relType = JEVisConstants.ObjectRelationship.NESTED_CLASS;

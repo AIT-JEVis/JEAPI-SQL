@@ -70,7 +70,7 @@ public class AttributeTable {
 
     //TODO: try-catch-finally
     public void insert(JEVisType type, JEVisObject obj) {
-        System.out.println("AttributeTable.insert");
+//        System.out.println("AttributeTable.insert");
         String sql = "insert into " + TABLE
                 + " (" + COLUMN_OBJECT + "," + COLUMN_NAME
                 + "," + COLUMN_DISPLAY_UNIT + "," + COLUMN_INPUT_UNIT
@@ -94,10 +94,10 @@ public class AttributeTable {
             ps.setString(3, unitJSON);
             ps.setString(4, unitJSON);
 
-            System.out.println("AttributeTable.insert: " + ps);
+//            System.out.println("AttributeTable.insert: " + ps);
             int count = ps.executeUpdate();
-            System.out.println("AttributeTable.insert: " + count);
-            System.out.println("success");
+//            System.out.println("AttributeTable.insert: " + count);
+//            System.out.println("success");
         } catch (Exception ex) {
             ex.printStackTrace();
         }

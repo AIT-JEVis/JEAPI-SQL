@@ -166,7 +166,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
     }
 
-    protected Connection getConnection() throws JEVisException {
+    public Connection getConnection() throws JEVisException {
         return _connect;
     }
 
@@ -272,11 +272,12 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public JEVisClass buildClass(String name) throws JEVisException {
         try {
 //            System.out.println("Build new JEVisClass: " + name);
+//            System.out.println("is sysadmin: " + RelationsManagment.isSysAdmin(_user));
             if (RelationsManagment.isSysAdmin(_user)) {
 //                System.out.println("User is Admin");
                 if (getClassTable().insert(name)) {
 //                    System.out.println("Insert done");
-
+//
                     return getClassTable().getObjectClass(name, false);
                 } else {
                     throw new JEVisException("Unsifficent rights", JEVisExceptionCodes.UNAUTHORIZED);
@@ -386,7 +387,7 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
         }
 
         List<JEVisObject> objs = getObjectTable().getObjects(classes);
-        System.out.println("Total Object count: " + objs.size());
+//        System.out.println("Total Object count: " + objs.size());
 
         //TODO: maybe its better to check this in the sql query?
         //Check if the user has permission
@@ -484,11 +485,6 @@ public class JEVisDataSourceSQL implements JEVisDataSource {
     public int getCount() {
         int tmp = qCount;
         qCount = 0;
-
-        System.out.println("Requests:");
-        System.out.println("---");
-        System.out.println(Arrays.toString(_qNames.toArray()));
-        System.out.println("---");
         _qNames = new ArrayList<String>();
 
         return tmp;

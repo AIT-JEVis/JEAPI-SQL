@@ -78,7 +78,7 @@ public class TypeTable {
             ps.setString(4, type.getGUIDisplayType());
 
             ps.setInt(5, type.getPrimitiveType());
-            System.out.println("sql.unit: " + type.getUnit());
+//            System.out.println("sql.unit: " + type.getUnit());
             if (type.getUnit() != null) {
                 ps.setString(6, type.getUnit().toString());
             } else {
@@ -95,7 +95,7 @@ public class TypeTable {
             ps.setString(11, originalName);
             ps.setString(12, type.getJEVisClass().getName());
 
-            System.out.println("sql.type.update: " + ps);
+//            System.out.println("sql.type.update: " + ps);
             int res = ps.executeUpdate();
 
             //Check if the name changed, if yes we have to change all existing JEVisObjects.....do we want that?
